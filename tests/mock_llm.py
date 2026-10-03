@@ -165,6 +165,9 @@ class Mock:
             return web.Response(body=f"event: error\ndata: {json.dumps(ev)}\n\n".encode(),
                                 headers={"Content-Type": "text/event-stream"})
         blocks, stop = self._decide_anthropic(body)
+        if self.a.thinking:  # a summarized thinking block first, as Claude returns with adaptive thinking
+            blocks = [{"type": "thinking", "thinking": f"THINKING-{self.calls}: weighing the next step.",
+                       "signature": "stub-signature"}] + blocks
         mid = f"msg_{uuid.uuid4().hex[:12]}"
         if not body.get("stream"):
             return web.json_response({"id": mid, "type": "message", "role": "assistant", "model": body.get("model"),
@@ -174,7 +177,14 @@ class Mock:
             "id": mid, "type": "message", "role": "assistant", "model": body.get("model"), "content": [],
             "stop_reason": None, "usage": usage}})]
         for i, b in enumerate(blocks):
-            if b["type"] == "text":
+            if b["type"] == "thinking":
+                events += [("content_block_start", {"type": "content_block_start", "index": i,
+                                                    "content_block": {"type": "thinking", "thinking": ""}}),
+                           ("content_block_delta", {"type": "content_block_delta", "index": i,
+                                                    "delta": {"type": "thinking_delta", "thinking": b["thinking"]}}),
+                           ("content_block_delta", {"type": "content_block_delta", "index": i,
+                                                    "delta": {"type": "signature_delta", "signature": b["signature"]}})]
+            elif b["type"] == "text":
                 events += [("content_block_start", {"type": "content_block_start", "index": i,
                                                     "content_block": {"type": "text", "text": ""}}),
                            ("content_block_delta", {"type": "content_block_delta", "index": i,
@@ -204,6 +214,7 @@ def main():
     p.add_argument("--no-models", action="store_true")
     p.add_argument("--provider", choices=["openai", "anthropic"], default="openai")
     p.add_argument("--stream-error-every", type=int, default=0)
+    p.add_argument("--thinking", action="store_true", help="anthropic: return a thinking block first")
     a = p.parse_args()
     m = Mock(a)
     app = web.Application()

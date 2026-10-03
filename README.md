@@ -189,17 +189,32 @@ Every trial also verifies itself before exiting and records the outcome in `resu
 
 ```
 result.json                     schema_version 2 (see below)
+best_solution.cpp               polyomino: the best valid submission
 trajectories/
-  prompt.md                     the exact prompt
-  agent-<i>.events.jsonl.gz     Copilot event stream (ephemeral events dropped)
+  prompt.md                     the exact prompt every agent received
+  agent-<i>.events.jsonl.gz     Copilot event stream: the model's reasoning (assistant.reasoning),
+                                messages, every tool call and its full result
+  agent-<i>-private.tar.gz      the agent's private state: Copilot's session store (complete
+                                session history), its home and temp dirs, Copilot logs
+  model_responses.jsonl.gz      every raw model response the proxy relayed, thinking included
+                                (--log-model-responses, on by default)
   model_calls.jsonl.gz          every model call: agent, status, retries, latency, finish_reason, tokens
+  shared_workspace.tar.gz       the shared folder (findings, disconfirmations, slots, score log,
+                                coordination) and every agent's scratch/work-<slot> dir
   game_events.jsonl.gz          ARC: every game action, refusal and session end
   submissions.jsonl.gz          polyomino: every submission, with per-case verdicts and ratios
   submission_sources.tar.gz     polyomino: every submitted source file
-  shared_workspace.tar.gz       the agents' shared notes, slots and scratch (files over 5 MB skipped)
-  copilot_logs.tar.gz           Copilot process logs
-best_solution.cpp               polyomino: the best valid submission
 ```
+
+To read a run as a timeline (thinking, messages, tool calls and results, per agent):
+
+```bash
+ttc trace RESULTS_DIR [--agent 0] [--max-chars 0]
+```
+
+With Claude models the thinking is Anthropic's summarized thinking (the raw chain of thought is
+never returned by the API). Program caches (e.g. Copilot's unpacked runtime) are left out of the
+private archives.
 
 `result.json` (schema 2) contains:
 - `trial`: task, mode, k, trial, plus the game and pinned `game_id` (ARC) or the Frontier-CS

@@ -10,6 +10,7 @@
   ttc verify-frontiercs [--dir DIR]
   ttc lock-games --dir DIR                                  maintainers: re-pin the public games
   ttc verify-trial RESULTS_DIR [...]                        re-score finished trial(s) independently
+  ttc trace     RESULTS_DIR [--agent I]                     readable timeline: thinking, messages, tools
   ttc score-polyomino FILE.cpp                              judge one polyomino solution
   ttc score-arc --game G --actions FILE.jsonl               replay an ARC action sequence
   ttc sweep     --manifest FILE --results-root DIR [...]    development: run many trials locally
@@ -104,6 +105,11 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--judge-parallelism", type=int, default=2)
     sp.add_argument("--judge-extra-cflag", action="append", dest="judge_extra_cflags", default=[])
     sp.add_argument("--per-case", action="store_true")
+    tr = sub.add_parser("trace", help="print agents' thinking, messages and tool calls as a timeline")
+    tr.add_argument("results_dir", type=Path)
+    tr.add_argument("--agent", type=int, default=None)
+    tr.add_argument("--max-chars", type=int, default=2000, help="clip long entries (0 = no limit)")
+    tr.add_argument("--no-tool-output", action="store_true")
     sa = sub.add_parser("score-arc", help="replay an action sequence through a pinned ARC game")
     sa.add_argument("--game", required=True)
     sa.add_argument("--actions", required=True, type=Path,
@@ -178,6 +184,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.out:
             args.out.write_text(json.dumps(reports, indent=2) + "\n")
         return 0 if reports and all(r["match"] for r in reports) else 1
+    if args.cmd == "trace":
+        from .traces import render
+        print(render(args.results_dir, args.agent, args.max_chars, not args.no_tool_output))
+        return 0
     if args.cmd == "score-polyomino":
         from .verifiers.polyomino import score_solution
         r = score_solution(args.file.read_text(), args.frontiercs_dir, parallelism=args.judge_parallelism,

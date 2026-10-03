@@ -249,7 +249,13 @@ class Trial:
             self.task.setup()
             self.task_ready = True
             self.launcher.chown_group(self.work / "task")
-            self.services = Services(st, self.work / "model_calls.jsonl", self.on_overflow, self.on_model_failures)
+            responses = None
+            if st.log_model_responses:
+                (self.work / "model_io").mkdir(exist_ok=True)
+                os.chmod(self.work / "model_io", 0o700)  # agents can't read or alter the transcript
+                responses = self.work / "model_io" / "responses.jsonl"
+            self.services = Services(st, self.work / "model_calls.jsonl", self.on_overflow, self.on_model_failures,
+                                     responses_path=responses)
             try:
                 await self.services.start(self.task.add_routes)
             except OSError as e:

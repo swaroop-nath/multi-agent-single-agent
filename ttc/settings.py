@@ -59,6 +59,7 @@ class TrialSettings:
     sse_keepalive_interval_seconds: float = 15.0
     upstream_timeout_seconds: float = 3600.0
     skip_model_preflight: bool = False
+    log_model_responses: bool = True  # save every raw model response (incl. thinking)
 
     # Copilot CLI
     copilot_binary: str = "copilot"
@@ -174,6 +175,8 @@ def add_trial_arguments(p: argparse.ArgumentParser) -> None:
                    default=d["sse_keepalive_interval_seconds"].default)
     g.add_argument("--upstream-timeout-seconds", type=float, default=d["upstream_timeout_seconds"].default)
     g.add_argument("--skip-model-preflight", action="store_true")
+    g.add_argument("--log-model-responses", type=_bool, default=True,
+                   help="save every raw model response, incl. thinking, to trajectories/")
 
     g = p.add_argument_group("copilot")
     g.add_argument("--copilot-binary", default=d["copilot_binary"].default)

@@ -22,6 +22,7 @@ It also makes Copilot robust to slow or unusual servers:
 * detects context overflow (an error saying the prompt is too long, or an empty HTTP 200 with
   finish_reason "length") and repeated call failures, and reports them per agent
 * records per-agent tokens, including cache reads and writes, for cost accounting
+* optionally saves every raw model response (incl. thinking) for post-hoc analysis
 """
 
 from __future__ import annotations
@@ -221,8 +222,10 @@ class Upstream:
 
 class Services:
     def __init__(self, settings, model_log_path, on_overflow: Callable[[str], None] | None = None,
-                 on_model_failures: Callable[[str, int], None] | None = None):
+                 on_model_failures: Callable[[str, int], None] | None = None, responses_path=None):
         self.s = settings
+        self.responses_path = responses_path
+        self._responses = None
         self.anthropic = getattr(settings, "provider", "openai") == "anthropic"
         self.model_log_path = model_log_path
         self.on_overflow = on_overflow or (lambda key: None)
@@ -237,6 +240,8 @@ class Services:
         self._session = aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=self.s.upstream_timeout_seconds, sock_connect=60))
         self._log = open(self.model_log_path, "a")
+        if self.responses_path:
+            self._responses = open(self.responses_path, "a")
         app = web.Application(client_max_size=256 * 1024 * 1024)
         if add_routes:
             add_routes(app)
@@ -252,6 +257,8 @@ class Services:
             await self._session.close()
         if self._log:
             self._log.close()
+        if self._responses:
+            self._responses.close()
 
     def register(self, agent_keys: list[str]) -> None:
         for key in agent_keys:
@@ -396,6 +403,12 @@ class Services:
         if is_chat and not ok and is_overflow_error(up.status, up.body):
             comp.overflow_error = True
         self._account(key, t0, tail, up, retries, comp, is_chat, ok)
+        if is_chat and self._responses:
+            self._responses.write(json.dumps({
+                "t": round(time.time(), 3), "agent": key.rsplit(".", 1)[-1], "status": up.status,
+                "retries": retries, "latency_s": round(time.time() - t0, 3),
+                "content_type": up.content_type, "body": up.body.decode(errors="replace")}) + "\n")
+            self._responses.flush()
 
         if resp is None:
             if not up.body and up.status >= 400:

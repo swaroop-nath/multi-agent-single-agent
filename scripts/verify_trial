@@ -1,0 +1,6 @@
+#!/bin/sh
+# Re-score finished trial(s) with the upstream verifiers, independently of their result.json:
+#   ARC: replay every agent's recorded actions through the pinned game (official engine)
+#   polyomino: re-judge best_solution.cpp with the Frontier-CS judge re-implementation
+# Exit 0 when every trial matches. Usage: /app/verify_trial RESULTS_DIR [...] [--out report.json]
+exec /app/.venv/bin/python -m ttc.cli verify-trial "$@"

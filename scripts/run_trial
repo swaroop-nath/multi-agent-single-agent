@@ -1,0 +1,4 @@
+#!/bin/sh
+# Run one trial. All task parameters are arguments; the model endpoint comes from
+# OPENAI_BASE_URL (or OPENAI_API_BASE) and OPENAI_API_KEY. See `/app/run_trial --help`.
+exec /app/.venv/bin/python -m ttc.cli trial "$@"

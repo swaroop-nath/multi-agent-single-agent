@@ -1,0 +1,363 @@
+{
+  "source": "ARC-AGI-3 public games via the arc-agi toolkit",
+  "games": {
+    "ar25": {
+      "game_id": "ar25-0c556536",
+      "levels": 8,
+      "baseline_actions": [
+        32,
+        50,
+        75,
+        37,
+        89,
+        159,
+        233,
+        73
+      ],
+      "source_sha256": "c4342ac3b51b66057ec51e84c68a32c65b881d79a07ef62612730cfb303ed4b6"
+    },
+    "bp35": {
+      "game_id": "bp35-0a0ad940",
+      "levels": 9,
+      "baseline_actions": [
+        21,
+        48,
+        44,
+        38,
+        33,
+        87,
+        86,
+        131,
+        163
+      ],
+      "source_sha256": "49719e4f2dfcbfee9b1a977e86043f6a8ae274fe5e06729f90bfcb9c675fe57b"
+    },
+    "cd82": {
+      "game_id": "cd82-fb555c5d",
+      "levels": 6,
+      "baseline_actions": [
+        55,
+        8,
+        41,
+        21,
+        23,
+        23
+      ],
+      "source_sha256": "5dd96c6dca5f2b6222a5e6c2b106f68683430c78ebcf7f9d737cef89566433ad"
+    },
+    "cn04": {
+      "game_id": "cn04-2fe56bfb",
+      "levels": 6,
+      "baseline_actions": [
+        29,
+        54,
+        85,
+        300,
+        208,
+        113
+      ],
+      "source_sha256": "a902014a41265e9f1c467f3a2679730e2c05761dc057bdc1306c1860d0f0119e"
+    },
+    "dc22": {
+      "game_id": "dc22-fdcac232",
+      "levels": 6,
+      "baseline_actions": [
+        59,
+        102,
+        67,
+        98,
+        324,
+        578
+      ],
+      "source_sha256": "388b8047a05f44e3ea5ccd692938cdfc8919f26438416e74c7f3175eb2e6ec47"
+    },
+    "ft09": {
+      "game_id": "ft09-0d8bbf25",
+      "levels": 6,
+      "baseline_actions": [
+        43,
+        12,
+        23,
+        28,
+        65,
+        37
+      ],
+      "source_sha256": "e1fb3b67d5dbe8f9a8f65213942c8f694f81367f04434f41be8b1fbec69442b9"
+    },
+    "g50t": {
+      "game_id": "g50t-5849a774",
+      "levels": 7,
+      "baseline_actions": [
+        78,
+        175,
+        179,
+        230,
+        96,
+        54,
+        67
+      ],
+      "source_sha256": "0322a6c1743e39929aefbdcb7e8c747c026d85a5b344a1d643c52d731b5ce143"
+    },
+    "ka59": {
+      "game_id": "ka59-38d34dbb",
+      "levels": 7,
+      "baseline_actions": [
+        28,
+        109,
+        51,
+        51,
+        33,
+        132,
+        326
+      ],
+      "source_sha256": "be7195fe62fa10100f80ecd56975843204b7e9e5f86fb860c4355c91a9d09388"
+    },
+    "lf52": {
+      "game_id": "lf52-271a04aa",
+      "levels": 10,
+      "baseline_actions": [
+        32,
+        81,
+        60,
+        71,
+        205,
+        148,
+        244,
+        109,
+        164,
+        225
+      ],
+      "source_sha256": "1d0a278f1273126c660ba29359d364ab3d4694ef26b17bb0e4d9ca6d44207775"
+    },
+    "lp85": {
+      "game_id": "lp85-305b61c3",
+      "levels": 8,
+      "baseline_actions": [
+        17,
+        38,
+        31,
+        16,
+        41,
+        60,
+        26,
+        159
+      ],
+      "source_sha256": "23ac07a6ed79961f77dba361ebf0bcbc08f03490bc0a294545077a21a9089641"
+    },
+    "ls20": {
+      "game_id": "ls20-9607627b",
+      "levels": 7,
+      "baseline_actions": [
+        22,
+        123,
+        73,
+        84,
+        96,
+        192,
+        186
+      ],
+      "source_sha256": "82e3c0c013fb50f1387429c895c456abd91391436d090475bf8221693623b74f"
+    },
+    "m0r0": {
+      "game_id": "m0r0-492f87ba",
+      "levels": 6,
+      "baseline_actions": [
+        30,
+        111,
+        203,
+        26,
+        500,
+        237
+      ],
+      "source_sha256": "3a49a4970d39cf8b3ed0c6d0028bc3970a3787122795c27791864e95b87343ee"
+    },
+    "r11l": {
+      "game_id": "r11l-495a7899",
+      "levels": 6,
+      "baseline_actions": [
+        22,
+        33,
+        51,
+        26,
+        52,
+        49
+      ],
+      "source_sha256": "eeec413ec560e2050548608c4b940529951a18fbaf6443a46d0409d2bb3a12ff"
+    },
+    "re86": {
+      "game_id": "re86-8af5384d",
+      "levels": 8,
+      "baseline_actions": [
+        26,
+        42,
+        86,
+        108,
+        189,
+        139,
+        424,
+        241
+      ],
+      "source_sha256": "faef31004538fc3a4c739e2226f5471dfe303e5ba2aebc84da6ebb41b967a9ad"
+    },
+    "s5i5": {
+      "game_id": "s5i5-18d95033",
+      "levels": 8,
+      "baseline_actions": [
+        20,
+        89,
+        106,
+        54,
+        162,
+        38,
+        86,
+        83
+      ],
+      "source_sha256": "1b6388c2f3ae58ada88327d503cb5ce9a3ab81a931efa29461eca08838e98609"
+    },
+    "sb26": {
+      "game_id": "sb26-7fbdac44",
+      "levels": 8,
+      "baseline_actions": [
+        18,
+        28,
+        18,
+        19,
+        31,
+        23,
+        58,
+        18
+      ],
+      "source_sha256": "1589218655e47cc20c99263cf7d64fcddfc5c8ae3f05b0c6780b494ab5c7753c"
+    },
+    "sc25": {
+      "game_id": "sc25-635fd71a",
+      "levels": 6,
+      "baseline_actions": [
+        36,
+        6,
+        32,
+        83,
+        143,
+        50
+      ],
+      "source_sha256": "2951e229e61becdd53c225a40e15215994ad121ada603d133a4655b878bec31b"
+    },
+    "sk48": {
+      "game_id": "sk48-d8078629",
+      "levels": 8,
+      "baseline_actions": [
+        61,
+        177,
+        101,
+        103,
+        230,
+        181,
+        125,
+        92
+      ],
+      "source_sha256": "7c42ba8580b67fa358f8e26513b498b90f59b36005b2ef1d993a9edd193a5979"
+    },
+    "sp80": {
+      "game_id": "sp80-589a99af",
+      "levels": 6,
+      "baseline_actions": [
+        39,
+        58,
+        25,
+        148,
+        96,
+        152
+      ],
+      "source_sha256": "35d22f6f7e76e63fc84bb83af2592bc65172d848ae9dcea79d9fa625952be1f4"
+    },
+    "su15": {
+      "game_id": "su15-1944f8ab",
+      "levels": 9,
+      "baseline_actions": [
+        22,
+        42,
+        26,
+        115,
+        36,
+        31,
+        8,
+        40,
+        41
+      ],
+      "source_sha256": "ee7173e9745af232a701e2d00b8d65bdc6de78a2da328221e86d138796570349"
+    },
+    "tn36": {
+      "game_id": "tn36-ef4dde99",
+      "levels": 7,
+      "baseline_actions": [
+        32,
+        72,
+        26,
+        40,
+        30,
+        55,
+        62
+      ],
+      "source_sha256": "c468f5d490fed05e4b73d79f025c7de459c5878d8206eaf70567e2720094fb7d"
+    },
+    "tr87": {
+      "game_id": "tr87-cd924810",
+      "levels": 6,
+      "baseline_actions": [
+        54,
+        58,
+        40,
+        45,
+        71,
+        146
+      ],
+      "source_sha256": "9a0ed7dadc6c1f7ccc5a173c79f6b0b14932c7e01c5e7c09218384a83e132193"
+    },
+    "tu93": {
+      "game_id": "tu93-0768757b",
+      "levels": 9,
+      "baseline_actions": [
+        19,
+        16,
+        34,
+        42,
+        123,
+        80,
+        14,
+        23,
+        111
+      ],
+      "source_sha256": "f17ff0b7ae7862f66de766de4d493895be16251e8e9fed637cb63e44dd41c0c6"
+    },
+    "vc33": {
+      "game_id": "vc33-5430563c",
+      "levels": 7,
+      "baseline_actions": [
+        7,
+        18,
+        44,
+        61,
+        131,
+        34,
+        152
+      ],
+      "source_sha256": "ea9ef3ff934db7bde3af0fd84d0c554233570048c524c0958ca28c512e0478c2"
+    },
+    "wa30": {
+      "game_id": "wa30-ee6fef47",
+      "levels": 9,
+      "baseline_actions": [
+        71,
+        119,
+        183,
+        98,
+        368,
+        68,
+        79,
+        442,
+        415
+      ],
+      "source_sha256": "c0fa541cb8ecd436a769f2dd9141f2dd645240064ef7d7c2c4505bc4ca13d152"
+    }
+  }
+}

@@ -1,0 +1,208 @@
+{
+ "name": "polyomino_pilot",
+ "command": "/app/run_trial --task polyomino --mode {mode} --k {k} --trial {trial} --results-dir /tmp/results --max-wall-seconds {max_wall_seconds}",
+ "suggested_outer_timeout": "max_wall_seconds + 15 minutes",
+ "resources": {
+  "cpus": 4,
+  "memory_gib": 8
+ },
+ "num_tasks": 28,
+ "tasks": [
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 0,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 1,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 2,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 3,
+   "max_wall_seconds": 10800
+  }
+ ]
+}

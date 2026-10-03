@@ -1,0 +1,31 @@
+[project]
+name = "ttc"
+version = "0.1.0"
+description = "Replication harness for 'Scaling Discovery through Test-Time Communication' (arXiv 2609.21032): ARC-AGI-3 and Frontier-CS polyomino packing with Copilot CLI agents on self-hosted models"
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.9",
+    "arc-agi>=0.9.9",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+
+[project.scripts]
+ttc = "ttc.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ttc*"]
+
+[tool.setuptools.package-data]
+ttc = ["prompts/*.md", "arc/arc_client.py", "arc/games.lock.json", "frontiercs/polyomino.lock.json",
+       "tasks/submit_client.py"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

@@ -1,0 +1,2316 @@
+{
+ "name": "arc_pilot",
+ "command": "/app/run_trial --task arc --game {game} --mode {mode} --k {k} --trial {trial} --results-dir /tmp/results --max-wall-seconds {max_wall_seconds}",
+ "suggested_outer_timeout": "max_wall_seconds + 15 minutes",
+ "resources": {
+  "cpus": 4,
+  "memory_gib": 8
+ },
+ "num_tasks": 288,
+ "tasks": [
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 3,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 3,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 3,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 3,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 3,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 3,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 3,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 3,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 5,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 5,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 5,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 5,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 5,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 5,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 5,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "lp85",
+   "mode": "team",
+   "k": 5,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 3,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 3,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 3,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 3,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 3,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 3,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 3,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 3,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 5,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 5,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 5,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 5,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 5,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 5,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 5,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ft09",
+   "mode": "team",
+   "k": 5,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 3,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 3,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 3,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 3,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 3,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 3,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 3,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 3,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 5,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 5,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 5,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 5,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 5,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 5,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 5,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "sb26",
+   "mode": "team",
+   "k": 5,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 3,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 3,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 3,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 3,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 3,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 3,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 3,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 3,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 5,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 5,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 5,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 5,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 5,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 5,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 5,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ar25",
+   "mode": "team",
+   "k": 5,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 3,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 3,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 3,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 3,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 3,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 3,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 3,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 3,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 5,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 5,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 5,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 5,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 5,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 5,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 5,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "ls20",
+   "mode": "team",
+   "k": 5,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 3,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 3,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 3,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 3,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 3,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 3,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 3,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 3,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 5,
+   "trial": 0,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 5,
+   "trial": 1,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 5,
+   "trial": 2,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 5,
+   "trial": 3,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 5,
+   "trial": 4,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 5,
+   "trial": 5,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 5,
+   "trial": 6,
+   "max_wall_seconds": 43200
+  },
+  {
+   "task": "arc",
+   "game": "vc33",
+   "mode": "team",
+   "k": 5,
+   "trial": 7,
+   "max_wall_seconds": 43200
+  }
+ ]
+}

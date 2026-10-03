@@ -1,0 +1,1174 @@
+{
+ "name": "polyomino_full",
+ "command": "/app/run_trial --task polyomino --mode {mode} --k {k} --trial {trial} --results-dir /tmp/results --max-wall-seconds {max_wall_seconds}",
+ "suggested_outer_timeout": "max_wall_seconds + 15 minutes",
+ "resources": {
+  "cpus": 4,
+  "memory_gib": 8
+ },
+ "num_tasks": 166,
+ "tasks": [
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 16,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 17,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 18,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 19,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 20,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 21,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 22,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 23,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 24,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 25,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 26,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 27,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 28,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 29,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 30,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 31,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 32,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 33,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 34,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 35,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 36,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 37,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 38,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 39,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 40,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 41,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 42,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 43,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 44,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 45,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 46,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 47,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 48,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 49,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 50,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 51,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 52,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 53,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 54,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 55,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 56,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 57,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 58,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 59,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 0,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 2,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 3,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 4,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 5,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 6,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 7,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 8,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 9,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 10,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 11,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 12,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 13,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 14,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 15,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 16,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 17,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 18,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 19,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 20,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 21,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 22,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 23,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 24,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 25,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 26,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 27,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 28,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 29,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 30,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 31,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 32,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 33,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 34,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 35,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 36,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 37,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 38,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 39,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 40,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 41,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 42,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 43,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 44,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 45,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 46,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 47,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 48,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 49,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 50,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 51,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 52,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 53,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 54,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 55,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 56,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 57,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 58,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 59,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 0,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 1,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 2,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 3,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 4,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 5,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 6,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 7,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 8,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 9,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 10,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 11,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 12,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 13,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 14,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 15,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 16,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 17,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 18,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 3,
+   "trial": 19,
+   "max_wall_seconds": 10800
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1000,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1001,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1002,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1003,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1004,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1005,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1006,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1007,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1008,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1009,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1010,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo",
+   "k": 1,
+   "trial": 1011,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1000,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1001,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1002,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1003,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1004,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1005,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1006,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1007,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1008,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1009,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1010,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "solo_rules",
+   "k": 1,
+   "trial": 1011,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 4,
+   "trial": 1000,
+   "max_wall_seconds": 259200
+  },
+  {
+   "task": "polyomino",
+   "mode": "team",
+   "k": 4,
+   "trial": 1001,
+   "max_wall_seconds": 259200
+  }
+ ]
+}

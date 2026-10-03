@@ -1,7 +1,10 @@
 """Settings for one trial, built from command-line arguments (`run_trial --help`).
 
 Every task parameter is a command-line argument. The only environment inputs are the model
-endpoint (OPENAI_BASE_URL or OPENAI_API_BASE) and its key (OPENAI_API_KEY).
+endpoint and its key:
+  --provider openai     OPENAI_BASE_URL (or OPENAI_API_BASE) and OPENAI_API_KEY
+  --provider anthropic  ANTHROPIC_API_KEY, and optionally ANTHROPIC_BASE_URL
+                        (default https://api.anthropic.com)
 """
 
 from __future__ import annotations
@@ -11,6 +14,8 @@ import os
 from dataclasses import asdict, dataclass, field
 
 MODES = ("solo", "solo_rules", "team")
+PROVIDERS = ("openai", "anthropic")
+DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com"
 TASKS = ("arc", "polyomino")
 DEFAULT_ENVIRONMENTS_DIR = "/opt/arc_envs"
 DEFAULT_FRONTIERCS_DIR = "/opt/frontiercs"
@@ -30,12 +35,18 @@ class TrialSettings:
     work_dir: str = "/tmp/ttc_work"
 
     # model (endpoint and key come from the environment)
-    model_alias: str = "ttc-model"
+    provider: str = "openai"  # openai (chat completions) | anthropic (Messages API)
+    model_alias: str = "ttc-model"  # the model name sent upstream; for anthropic, a real model id
     context_window: int = 131072
     max_output_tokens: int = 16384
     max_prompt_tokens: int | None = None  # default: context_window - max_output_tokens
     reasoning_effort: str | None = None
-    inject_max_tokens: bool = True  # Copilot never sends max_tokens; the proxy adds it
+    inject_max_tokens: bool = True  # openai: Copilot never sends max_tokens, so the proxy adds it
+    # optional USD prices per million tokens, for a cost estimate in result.json
+    price_input: float | None = None
+    price_output: float | None = None
+    price_cache_read: float | None = None
+    price_cache_write: float | None = None
     base_url: str = field(default="", repr=False)
     api_key: str | None = field(default=None, repr=False)
 
@@ -90,6 +101,10 @@ class TrialSettings:
     port: int = 8700
 
     def __post_init__(self) -> None:
+        if self.provider not in PROVIDERS:
+            raise ValueError(f"provider must be one of {PROVIDERS}")
+        if self.provider == "anthropic" and self.model_alias == "ttc-model":
+            raise ValueError("--provider anthropic needs a real model id, e.g. --model-alias claude-sonnet-4-6")
         if self.task not in TASKS:
             raise ValueError(f"task must be one of {TASKS}")
         if self.task == "arc" and not self.game:
@@ -136,7 +151,14 @@ def add_trial_arguments(p: argparse.ArgumentParser) -> None:
     g.add_argument("--work-dir", default=d["work_dir"].default)
 
     g = p.add_argument_group("model")
-    g.add_argument("--model-alias", default=d["model_alias"].default)
+    g.add_argument("--provider", choices=PROVIDERS, default="openai",
+                   help="openai: OpenAI-compatible chat completions; anthropic: Anthropic Messages API")
+    g.add_argument("--model-alias", default=d["model_alias"].default,
+                   help="model name sent upstream (anthropic: a model id such as claude-sonnet-4-6)")
+    g.add_argument("--price-input", type=float, default=None, help="USD per million uncached input tokens")
+    g.add_argument("--price-output", type=float, default=None, help="USD per million output tokens")
+    g.add_argument("--price-cache-read", type=float, default=None, help="USD per million cache-read tokens")
+    g.add_argument("--price-cache-write", type=float, default=None, help="USD per million cache-write tokens")
     g.add_argument("--context-window", type=int, default=d["context_window"].default)
     g.add_argument("--max-output-tokens", type=int, default=d["max_output_tokens"].default)
     g.add_argument("--max-prompt-tokens", type=int, default=None)
@@ -190,9 +212,16 @@ def add_trial_arguments(p: argparse.ArgumentParser) -> None:
 
 def settings_from_args(args: argparse.Namespace, environ: dict[str, str] | None = None) -> TrialSettings:
     env = os.environ if environ is None else environ
-    base_url = env.get("OPENAI_BASE_URL") or env.get("OPENAI_API_BASE") or ""
-    if not base_url:
-        raise SystemExit("OPENAI_BASE_URL (or OPENAI_API_BASE) is not set")
+    if getattr(args, "provider", "openai") == "anthropic":
+        base_url = env.get("ANTHROPIC_BASE_URL") or DEFAULT_ANTHROPIC_BASE_URL
+        api_key = env.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise SystemExit("ANTHROPIC_API_KEY is not set")
+    else:
+        base_url = env.get("OPENAI_BASE_URL") or env.get("OPENAI_API_BASE") or ""
+        api_key = env.get("OPENAI_API_KEY")
+        if not base_url:
+            raise SystemExit("OPENAI_BASE_URL (or OPENAI_API_BASE) is not set")
     names = {f for f in TrialSettings.__dataclass_fields__} - {"base_url", "api_key"}
     kwargs = {n: getattr(args, n) for n in names if hasattr(args, n)}
-    return TrialSettings(**kwargs, base_url=base_url, api_key=env.get("OPENAI_API_KEY"))
+    return TrialSettings(**kwargs, base_url=base_url, api_key=api_key)

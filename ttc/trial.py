@@ -29,7 +29,7 @@ from pathlib import Path
 from . import prompts
 from .agents import AgentLauncher
 from .results import write_json, write_trajectories
-from .services import Services
+from .services import Services, estimate_cost
 from .settings import TrialSettings
 from .tasks import make_task
 from .tasks.base import InfraError
@@ -81,16 +81,16 @@ class Trial:
     # ---- preflight ---------------------------------------------------------------------------------
     async def _check_model(self) -> None:
         assert self.services is not None
-        body = json.dumps({"model": self.st.model_alias, "max_tokens": 1, "stream": False,
-                           "messages": [{"role": "user", "content": "Reply with OK."}]}).encode()
         t0 = time.time()
-        up, retries = await self.services.fetch(
-            "POST", self.services.upstream_url("chat/completions"), body,
-            {**self.services.upstream_headers(), "Content-Type": "application/json"})
-        self.preflight["model"] = {"status": up.status, "retries": retries, "latency_s": round(time.time() - t0, 1),
-                                   "error": up.error}
+        up, retries = await self.services.probe()
+        self.preflight["model"] = {"provider": self.st.provider, "status": up.status, "retries": retries,
+                                   "latency_s": round(time.time() - t0, 1), "error": up.error}
         if up.status == 599 or up.status >= 500:
             raise InfraError(2, f"model endpoint unreachable/failing: {up.error or up.status}")
+        if up.status in (401, 403):
+            raise InfraError(2, f"model endpoint rejected the API key ({up.status}): {up.body[:300]!r}")
+        if up.status == 404:
+            raise InfraError(2, f"model or endpoint not found ({up.status}): {up.body[:300]!r}")
         if up.status >= 400:  # reachable, but the probe was refused; record and continue
             log.warning("model preflight returned %s: %s", up.status, up.body[:300])
 
@@ -161,15 +161,15 @@ class Trial:
             "TERM": "dumb",
             "NO_COLOR": "1",
             "COPILOT_PROVIDER_BASE_URL": f"http://{st.host}:{st.port}/llm/{self.keys[i]}",
-            "COPILOT_PROVIDER_TYPE": "openai",
+            "COPILOT_PROVIDER_TYPE": st.provider,
             "COPILOT_PROVIDER_API_KEY": "ttc-local-proxy",  # the real key never reaches agents
-            "COPILOT_PROVIDER_WIRE_API": "completions",
             "COPILOT_MODEL": st.model_alias,
             "COPILOT_PROVIDER_MAX_PROMPT_TOKENS": str(st.max_prompt_tokens),
             "COPILOT_PROVIDER_MAX_OUTPUT_TOKENS": str(st.max_output_tokens),
             "COPILOT_OFFLINE": "true",
             "COPILOT_AUTO_UPDATE": "false",
             "COPILOT_HOME": str(a / "copilot_home"),
+            **({"COPILOT_PROVIDER_WIRE_API": "completions"} if st.provider == "openai" else {}),
             **self.task.agent_env(i, st.host, st.port),
         }
 
@@ -351,13 +351,16 @@ class Trial:
                 "agent": i,
                 "termination_reason": s.end_reason or "trial_ended",
                 **task_agents[i],
-                "model_calls": c.summary() if c else None,
+                "model_calls": ({**c.summary(), "estimated_cost_usd": estimate_cost(c.summary(), st)}
+                                if c else None),
                 "copilot_exit_codes": self.exit_codes[i], "copilot_crashes": self.crashes[i],
                 "relaunches": max(0, len(self.exit_codes[i]) - 1),
             })
         total = {f: sum(calls[k].__dict__[f] for k in self.keys if k in calls)
                  for f in ("requests", "ok", "failed", "retries", "context_overflows", "truncated",
-                           "prompt_tokens", "output_tokens", "reasoning_tokens", "cached_tokens")}
+                           "prompt_tokens", "output_tokens", "reasoning_tokens", "cached_tokens",
+                           "cache_write_tokens")}
+        total["estimated_cost_usd"] = estimate_cost(total, st)
         out["outcome"] = outcome
         out.update(extra)
         out["agents"] = agents

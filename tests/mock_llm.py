@@ -1,4 +1,7 @@
-"""Scripted OpenAI-compatible stub endpoint for testing the harness without a GPU.
+"""Scripted model-endpoint stub for testing the harness without a GPU or an API key.
+
+Speaks OpenAI chat completions (/v1/chat/completions) or, with --provider anthropic, the
+Anthropic Messages API (/v1/messages, streaming events, tool_use blocks, cache usage fields).
 
 Each conversation runs the commands in --script, one shell tool call per model turn, then
 gives a final text answer. Behaviors of slow or unusual servers can be switched on:
@@ -7,7 +10,9 @@ gives a final text answer. Behaviors of slow or unusual servers can be switched 
                          (streaming is not incremental; no keepalive bytes)
   --overflow-after N     after N chat calls, answer with HTTP 200, empty content and
                          finish_reason "length" (context overflow)
-  --fail-every N         every Nth chat call returns HTTP 503
+  --fail-every N         every Nth chat call returns HTTP 503 (anthropic: 529 overloaded)
+  --stream-error-every N anthropic: every Nth call returns HTTP 200 whose stream is an
+                         overloaded `error` event
   --no-models            404 on /models (only chat completions is guaranteed)
 
 Every request (method, path, body) is appended to --dump.
@@ -37,7 +42,7 @@ def pick_shell_tool(tools):
 
 
 def fill_args(fn, command):
-    params = fn.get("parameters", {})
+    params = fn.get("parameters") or fn.get("input_schema") or {}
     props = params.get("properties", {})
     args = {}
     cmd_key = next((k for k in ("command", "cmd", "script", "input") if k in props), None)
@@ -66,7 +71,10 @@ class Mock:
     def _record(self, request, body):
         if self.dump:
             self.dump.write(json.dumps({"t": time.time(), "method": request.method, "path": request.path,
-                                        "auth": request.headers.get("Authorization"), "body": body}) + "\n")
+                                        "auth": request.headers.get("Authorization"),
+                                        "x_api_key": request.headers.get("x-api-key"),
+                                        "anthropic_version": request.headers.get("anthropic-version"),
+                                        "body": body}) + "\n")
             self.dump.flush()
 
     def _decide(self, body):
@@ -125,6 +133,65 @@ class Mock:
         return web.Response(body=payload.encode(), headers={"Content-Type": "text/event-stream"})
 
 
+    # ---- Anthropic Messages API ---------------------------------------------------------------------
+    def _decide_anthropic(self, body):
+        msgs = body.get("messages", [])
+        tool = pick_shell_tool(body.get("tools"))
+        done = sum(1 for m in msgs if m.get("role") == "assistant" and isinstance(m.get("content"), list)
+                   and any(b.get("type") == "tool_use" for b in m["content"]))
+        if tool is None or done >= len(self.a.script):
+            return [{"type": "text", "text": "Finished the scripted steps."}], "end_turn"
+        return [{"type": "tool_use", "id": f"toolu_{uuid.uuid4().hex[:12]}", "name": tool["name"],
+                 "input": fill_args(tool, self.a.script[done])}], "tool_use"
+
+    async def messages(self, request):
+        body = await request.json()
+        self._record(request, body)
+        self.calls += 1
+        if self.a.fail_every and self.calls % self.a.fail_every == 0:
+            return web.json_response({"type": "error", "error": {"type": "overloaded_error", "message": "stub"}},
+                                     status=529)
+        if self.a.first_byte_delay:
+            await asyncio.sleep(self.a.first_byte_delay)
+        if self.a.overflow_after is not None and self.calls > self.a.overflow_after:
+            return web.json_response({"type": "error", "error": {
+                "type": "invalid_request_error", "message": "prompt is too long: 1100000 tokens > 1000000 maximum"}},
+                status=400)
+        n = len(body.get("messages", []))
+        usage = {"input_tokens": 3, "cache_creation_input_tokens": 200, "cache_read_input_tokens": 1000 * n,
+                 "output_tokens": 1}
+        if self.a.stream_error_every and self.calls % self.a.stream_error_every == 0:
+            ev = {"type": "error", "error": {"type": "overloaded_error", "message": "stub: overloaded mid-stream"}}
+            return web.Response(body=f"event: error\ndata: {json.dumps(ev)}\n\n".encode(),
+                                headers={"Content-Type": "text/event-stream"})
+        blocks, stop = self._decide_anthropic(body)
+        mid = f"msg_{uuid.uuid4().hex[:12]}"
+        if not body.get("stream"):
+            return web.json_response({"id": mid, "type": "message", "role": "assistant", "model": body.get("model"),
+                                      "content": blocks, "stop_reason": stop,
+                                      "usage": {**usage, "output_tokens": 9}})
+        events = [("message_start", {"type": "message_start", "message": {
+            "id": mid, "type": "message", "role": "assistant", "model": body.get("model"), "content": [],
+            "stop_reason": None, "usage": usage}})]
+        for i, b in enumerate(blocks):
+            if b["type"] == "text":
+                events += [("content_block_start", {"type": "content_block_start", "index": i,
+                                                    "content_block": {"type": "text", "text": ""}}),
+                           ("content_block_delta", {"type": "content_block_delta", "index": i,
+                                                    "delta": {"type": "text_delta", "text": b["text"]}})]
+            else:
+                events += [("content_block_start", {"type": "content_block_start", "index": i,
+                                                    "content_block": {**b, "input": {}}}),
+                           ("content_block_delta", {"type": "content_block_delta", "index": i, "delta": {
+                               "type": "input_json_delta", "partial_json": json.dumps(b["input"])}})]
+            events.append(("content_block_stop", {"type": "content_block_stop", "index": i}))
+        events += [("message_delta", {"type": "message_delta", "delta": {"stop_reason": stop},
+                                      "usage": {"output_tokens": 9}}),
+                   ("message_stop", {"type": "message_stop"})]
+        payload = "".join(f"event: {name}\ndata: {json.dumps(data)}\n\n" for name, data in events)
+        return web.Response(body=payload.encode(), headers={"Content-Type": "text/event-stream"})
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--port", type=int, default=8901)
@@ -135,11 +202,14 @@ def main():
     p.add_argument("--overflow-after", type=int, default=None)
     p.add_argument("--fail-every", type=int, default=0)
     p.add_argument("--no-models", action="store_true")
+    p.add_argument("--provider", choices=["openai", "anthropic"], default="openai")
+    p.add_argument("--stream-error-every", type=int, default=0)
     a = p.parse_args()
     m = Mock(a)
     app = web.Application()
     app.router.add_get("/v1/models", m.models)
     app.router.add_post("/v1/chat/completions", m.chat)
+    app.router.add_post("/v1/messages", m.messages)
     web.run_app(app, host="127.0.0.1", port=a.port, print=None)
 
 

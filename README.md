@@ -8,10 +8,14 @@ is empty, so this is rebuilt from the paper. It covers two of the paper's tasks:
 * **Frontier-CS polyomino packing** (`--task polyomino`): Frontier-CS algorithmic problem 0,
   scored on its 70 test cases with the upstream checker.
 
-As in the paper, each agent is **GitHub Copilot CLI**. It runs in BYOK mode against any
-OpenAI-compatible endpoint (e.g. a model served with vLLM or SGLang) given in
-`OPENAI_BASE_URL`, with `COPILOT_OFFLINE=true`: no GitHub account and no network access apart
-from model calls.
+As in the paper, each agent is **GitHub Copilot CLI**, run in BYOK ("bring your own key") mode
+with `COPILOT_OFFLINE=true`: no GitHub account or Copilot subscription, and no network access
+apart from model calls. Two providers are supported (`--provider`):
+
+* `anthropic`: Claude models through the Anthropic Messages API, with an API key from the
+  Anthropic Console in `ANTHROPIC_API_KEY` (a Claude.ai subscription can't be used here).
+* `openai` (default): any OpenAI-compatible chat-completions endpoint, e.g. a model served with
+  vLLM or SGLang, given in `OPENAI_BASE_URL` / `OPENAI_API_KEY`.
 
 ## Running a trial
 
@@ -19,12 +23,33 @@ from model calls.
 |---|---|
 | Self-contained, pinned image | `Dockerfile` pins the Python and Node base images by digest, hash-locks Python deps (`requirements.lock`, `agent-requirements.lock`), and installs Copilot CLI from an integrity-locked `docker/copilot/package-lock.json`. At build time it downloads the 25 ARC games (pinned and hash-checked against `ttc/arc/games.lock.json`) and the Frontier-CS files (a fixed upstream commit, hash-checked against `ttc/frontiercs/polyomino.lock.json`) |
 | One trial is one command | `/app/run_trial --task arc --game G --mode {solo,solo_rules,team} --k K --trial T --results-dir /tmp/results --max-wall-seconds N`, or `--task polyomino` without `--game` (no ENTRYPOINT or CMD) |
-| Model access only from env | Reads `OPENAI_BASE_URL` (or `OPENAI_API_BASE`) and `OPENAI_API_KEY`. Calls `<base>/chat/completions` with the base used exactly as given; the key is sent as `Bearer`. The model name is `--model-alias` |
+| Model access only from env | `--provider anthropic`: reads `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_BASE_URL`, default `https://api.anthropic.com`); calls `/v1/messages`, key sent as `x-api-key`; `--model-alias` must be a real model id. `--provider openai`: reads `OPENAI_BASE_URL` (or `OPENAI_API_BASE`) and `OPENAI_API_KEY`; calls `<base>/chat/completions` with the base used exactly as given, key sent as `Bearer`. Agents never see the key |
 | No other network | Copilot runs with `COPILOT_OFFLINE=true` and auto-update off; the games and test data are local |
 | Results directory | `--results-dir`, default `/tmp/results` (layout below) |
 | Exit codes | `0` trial ran (any score) · `2` model endpoint unreachable at start · `3` preflight failed · `4` no model call succeeded · `5` stopped by signal · `1` harness bug |
 | Wall-clock limit | Stops itself at `--max-wall-seconds` minus a margin (`--wall-margin-seconds`, default max(120 s, 3%)), writes results, exits 0 with `ended_by: wall_clock` |
 | Independent, rerunnable trials | No state outside the container; `--trial` is a label only |
+
+### Example: Claude Sonnet 4.6 on polyomino, one team@3 vs best@3, 3 hours
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...      # an Anthropic Console API key
+COMMON="--task polyomino --provider anthropic --model-alias claude-sonnet-4-6 --reasoning-effort max \
+  --max-wall-seconds 10800 --price-input 3 --price-output 15 --price-cache-read 0.3 --price-cache-write 3.75"
+
+# all four trials at once, each on its own local port; ~3 hours in total
+/app/run_trial $COMMON --mode team --k 3 --trial 0 --results-dir /tmp/results/team3-0 --port 8700 &
+for t in 0 1 2; do                        # best@3 = the best of three independent solo runs
+  /app/run_trial $COMMON --mode solo --k 1 --trial $t --results-dir /tmp/results/solo-$t --port $((8701 + t)) &
+done
+wait
+ttc analyze /tmp/results --out /tmp/analysis
+```
+
+Inside Docker, pass the key with `-e ANTHROPIC_API_KEY` and mount a results directory. The
+`--price-*` flags (USD per million tokens) only fill in `estimated_cost_usd` in `result.json`;
+check current prices before relying on them. One observation: in Anthropic mode Copilot sends
+`max_tokens: 32000` regardless of `--max-output-tokens`.
 
 Task lists are in `manifests/`; each entry carries its own `max_wall_seconds`. Regenerate
 with `ttc manifest NAME`.
@@ -124,13 +149,16 @@ Every trial also verifies itself before exiting and records the outcome in `resu
   - The team sync barrier from Appendix A.3: a refused action is not charged, and finished,
     exhausted or idle agents don't block the others.
 * **Model proxy** (`ttc/services.py`, on 127.0.0.1). Agents call it, never the endpoint.
-  - It holds the real key and attributes every call to an agent.
-  - It retries 429/5xx/transport errors with backoff.
+  - It holds the real key and attributes every call to an agent, counting cache reads and
+    writes separately.
+  - It retries 429/5xx/529/transport errors with backoff, including Anthropic overload errors
+    that arrive inside an HTTP 200 stream.
   - It sends SSE keepalive comments while a call is slow.
-  - It adds `max_tokens` (Copilot never sends it), maps `developer` to `system`, and answers
-    `/models` locally.
-  - It detects context overflow (HTTP 200, empty content, `finish_reason: "length"`) and
-    repeated failures, and ends that agent with `context_overflow` or `model_errors`.
+  - OpenAI mode: it adds `max_tokens` (Copilot never sends it) and maps `developer` to
+    `system`. Both modes: it answers `/models` locally.
+  - It detects context overflow (an error saying the prompt is too long, or an empty HTTP 200
+    with `finish_reason: "length"`) and repeated failures, and ends that agent with
+    `context_overflow` or `model_errors`.
 * **Polyomino scorer** (`ttc/tasks/polyomino.py`, `ttc/frontiercs/`):
   - a `submit` command for agents;
   - a queue, so submissions are judged one at a time with cases in parallel
@@ -191,7 +219,8 @@ best_solution.cpp               polyomino: the best valid submission
   - levels, actions per level, level completion log, RHAE;
   - model-call counts and tokens;
   - Copilot exit codes and relaunches.
-- `totals`, and `degradation`: model-call failure rate, retries, overflows, crashes.
+- `totals` (tokens incl. cache reads/writes, and `estimated_cost_usd` when `--price-*` is given),
+  and `degradation`: model-call failure rate, retries, overflows, crashes.
 - `sampling_params_sent`: the sampling parameters Copilot sent (a server may override them).
 - `versions`: harness, Copilot CLI, arc-agi, build commit.
 - `config`: every setting, with no secrets.
@@ -233,7 +262,8 @@ python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
 scripts/smoke_test.sh "$(which copilot)"                      # stub endpoint, 3 ARC trials, then analyze
 ```
 
-`tests/mock_llm.py` is a stub OpenAI-compatible endpoint for testing without a GPU. It can
+`tests/mock_llm.py` is a stub endpoint for testing without a GPU or API key; it speaks OpenAI
+chat completions, or the Anthropic Messages API with `--provider anthropic`. It can
 also imitate awkward servers: send the whole response at once after a long delay, put all tool
 calls in a single delta, return `finish_reason: "length"` overflows, return 503s, and refuse
 `/models`.

@@ -1,19 +1,27 @@
 """Local harness services, served from one aiohttp app on 127.0.0.1:
 
   task routes                     the task's own API (e.g. /arc/..., /poly/...), see ttc/tasks
-  /llm/{agent_key}/...            OpenAI-compatible proxy in front of OPENAI_BASE_URL
+  /llm/{agent_key}/...            model proxy in front of the configured provider
 
 The proxy exists so that agents never hold the real API key, and so that every model call is
-attributed to an agent. It also makes Copilot robust to slow or unusual OpenAI-compatible servers:
+attributed to an agent. Two providers are supported:
 
-* forwards to OPENAI_BASE_URL exactly as given (path prefix included) + the request's tail
-* answers /models locally (the endpoint only guarantees chat completions)
-* retries transport errors, 429 and 5xx with exponential backoff
-* when a call takes long, sends SSE comment keepalives to Copilot (the endpoint may send the
-  whole stream at once after minutes, with no bytes before)
-* adds max_tokens when Copilot omits it (it always does), maps `developer` -> `system`
-* detects context overflow (HTTP 200, empty content, finish_reason "length") and repeated
-  call failures, and reports them per agent
+  openai     OpenAI-compatible chat completions (e.g. vLLM, SGLang); upstream = OPENAI_BASE_URL
+             exactly as given (path prefix included) + the request's tail
+  anthropic  the Anthropic Messages API (/v1/messages); upstream = ANTHROPIC_BASE_URL
+
+It also makes Copilot robust to slow or unusual servers:
+
+* answers /models locally
+* retries transport errors, 429, 5xx and 529 with exponential backoff, including Anthropic
+  overload errors that arrive inside an HTTP 200 stream (responses are buffered, so a retry is
+  invisible to Copilot)
+* when a call takes long, sends SSE comment keepalives to Copilot (a server may send the whole
+  stream at once after minutes, with no bytes before)
+* openai: adds max_tokens when Copilot omits it (it always does), maps `developer` -> `system`
+* detects context overflow (an error saying the prompt is too long, or an empty HTTP 200 with
+  finish_reason "length") and repeated call failures, and reports them per agent
+* records per-agent tokens, including cache reads and writes, for cost accounting
 """
 
 from __future__ import annotations
@@ -27,10 +35,13 @@ from typing import Callable
 import aiohttp
 from aiohttp import web
 
-
 HOP_HEADERS = {"host", "content-length", "authorization", "connection", "accept-encoding",
                "transfer-encoding", "keep-alive", "x-api-key"}
 RETRY_STATUS = {408, 409, 425, 429, 500, 502, 503, 504, 520, 521, 522, 524, 529}
+ANTHROPIC_VERSION = "2023-06-01"
+# substrings of error bodies that mean "the prompt no longer fits the context window"
+OVERFLOW_MARKERS = (b"prompt is too long", b"maximum context length", b"context_length_exceeded",
+                    b"context length", b"too many tokens")
 
 
 @dataclass
@@ -40,11 +51,12 @@ class AgentCalls:
     failed: int = 0  # failed after all retries (or a non-retryable error status)
     retries: int = 0
     context_overflows: int = 0
-    truncated: int = 0  # finish_reason "length" with some content
-    prompt_tokens: int = 0
+    truncated: int = 0  # stopped at the output limit, with some content
+    prompt_tokens: int = 0  # all input tokens, cached or not
     output_tokens: int = 0
-    reasoning_tokens: int = 0
-    cached_tokens: int = 0
+    reasoning_tokens: int = 0  # openai only; Anthropic counts thinking inside output_tokens
+    cached_tokens: int = 0  # cache reads
+    cache_write_tokens: int = 0  # anthropic cache creation
     consecutive_failures: int = 0
     timeline: list = field(default_factory=list)  # (t, output_tokens) per completed call
     sampling_params: list = field(default_factory=list)  # distinct non-message params Copilot sent
@@ -57,9 +69,17 @@ class AgentCalls:
 
 
 def normalize_usage(u: dict | None) -> dict:
-    """Chat-completions and Responses usage blocks -> one schema."""
+    """OpenAI chat-completions, OpenAI Responses and Anthropic usage blocks -> one schema.
+
+    prompt_tokens counts every input token (uncached + cache reads + cache writes)."""
     if not u:
         return {}
+    if "cache_read_input_tokens" in u or "cache_creation_input_tokens" in u:  # anthropic
+        read = u.get("cache_read_input_tokens") or 0
+        write = u.get("cache_creation_input_tokens") or 0
+        return {"prompt_tokens": (u.get("input_tokens") or 0) + read + write,
+                "output_tokens": u.get("output_tokens") or 0, "reasoning_tokens": 0,
+                "cached_tokens": read, "cache_write_tokens": write}
     out = {
         "prompt_tokens": u.get("prompt_tokens", u.get("input_tokens", 0)) or 0,
         "output_tokens": u.get("completion_tokens", u.get("output_tokens", 0)) or 0,
@@ -68,7 +88,19 @@ def normalize_usage(u: dict | None) -> dict:
     out["reasoning_tokens"] = det.get("reasoning_tokens", 0) or 0
     pdet = u.get("prompt_tokens_details") or u.get("input_tokens_details") or {}
     out["cached_tokens"] = pdet.get("cached_tokens", 0) or 0
+    out["cache_write_tokens"] = 0
     return out
+
+
+def estimate_cost(t: dict, settings) -> float | None:
+    """USD from token totals and the per-million prices given on the command line."""
+    prices = (settings.price_input, settings.price_output, settings.price_cache_read, settings.price_cache_write)
+    if all(p is None for p in prices):
+        return None
+    pi, po, pr, pw = (p or 0.0 for p in prices)
+    uncached = t.get("prompt_tokens", 0) - t.get("cached_tokens", 0) - t.get("cache_write_tokens", 0)
+    return round((uncached * pi + t.get("output_tokens", 0) * po + t.get("cached_tokens", 0) * pr
+                  + t.get("cache_write_tokens", 0) * pw) / 1e6, 4)
 
 
 @dataclass
@@ -77,16 +109,38 @@ class Completion:
     finish_reason: str | None = None
     has_content: bool = False
     has_tool_calls: bool = False
+    overflow_error: bool = False  # the server rejected the prompt as too long
+    stream_error: str | None = None  # anthropic: an `error` event inside a 200 stream
+    complete: bool = False  # anthropic: saw message_stop / a full message
 
     @property
     def is_overflow(self) -> bool:
+        if self.overflow_error:
+            return True
         return self.finish_reason == "length" and not self.has_content and not self.has_tool_calls
 
+    @property
+    def is_truncated(self) -> bool:
+        return self.finish_reason in ("length", "max_tokens") and not self.is_overflow
 
-def inspect_response(body: bytes, is_sse: bool) -> Completion:
+
+def _sse_payloads(body: bytes):
+    for line in body.split(b"\n"):
+        line = line.strip()
+        if line.startswith(b"data:"):
+            data = line[5:].strip()
+            if data and data != b"[DONE]":
+                try:
+                    obj = json.loads(data)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(obj, dict):
+                    yield obj
+
+
+def _inspect_openai(objs) -> Completion:
     c = Completion()
-
-    def take(obj: dict) -> None:
+    for obj in objs:
         if obj.get("usage"):
             c.usage = obj["usage"]
         for ch in obj.get("choices") or []:
@@ -97,27 +151,64 @@ def inspect_response(body: bytes, is_sse: bool) -> Completion:
                 c.has_content = True
             if part.get("tool_calls"):
                 c.has_tool_calls = True
+    return c
 
+
+def _inspect_anthropic(objs) -> Completion:
+    c = Completion()
+    usage: dict = {}
+    for obj in objs:
+        t = obj.get("type")
+        if t == "message":  # non-streaming response
+            usage.update(obj.get("usage") or {})
+            c.finish_reason = obj.get("stop_reason")
+            for b in obj.get("content") or []:
+                if b.get("type") == "tool_use":
+                    c.has_tool_calls = True
+                elif (b.get("text") or b.get("thinking") or "").strip():
+                    c.has_content = True
+            c.complete = True
+        elif t == "message_start":
+            usage.update((obj.get("message") or {}).get("usage") or {})
+        elif t == "content_block_start":
+            b = obj.get("content_block") or {}
+            if b.get("type") == "tool_use":
+                c.has_tool_calls = True
+            elif (b.get("text") or b.get("thinking") or "").strip():
+                c.has_content = True
+        elif t == "content_block_delta":
+            d = obj.get("delta") or {}
+            if d.get("type") == "input_json_delta":
+                c.has_tool_calls = True
+            elif (d.get("text") or d.get("thinking") or "").strip():
+                c.has_content = True
+        elif t == "message_delta":
+            usage.update({k: v for k, v in (obj.get("usage") or {}).items() if v is not None})
+            stop = (obj.get("delta") or {}).get("stop_reason")
+            if stop:
+                c.finish_reason = stop
+        elif t == "message_stop":
+            c.complete = True
+        elif t == "error":
+            c.stream_error = json.dumps(obj.get("error") or obj)[:500]
+    c.usage = usage
+    return c
+
+
+def inspect_response(body: bytes, is_sse: bool, provider: str = "openai") -> Completion:
     if is_sse:
-        for line in body.split(b"\n"):
-            line = line.strip()
-            if line.startswith(b"data:"):
-                data = line[5:].strip()
-                if data and data != b"[DONE]":
-                    try:
-                        obj = json.loads(data)
-                    except json.JSONDecodeError:
-                        continue
-                    if isinstance(obj, dict):
-                        take(obj)
+        objs = list(_sse_payloads(body))
     else:
         try:
             obj = json.loads(body)
-            if isinstance(obj, dict):
-                take(obj)
+            objs = [obj] if isinstance(obj, dict) else []
         except json.JSONDecodeError:
-            pass
-    return c
+            objs = []
+    return _inspect_anthropic(objs) if provider == "anthropic" else _inspect_openai(objs)
+
+
+def is_overflow_error(status: int, body: bytes) -> bool:
+    return status in (400, 413) and any(m in body.lower() for m in OVERFLOW_MARKERS)
 
 
 @dataclass
@@ -132,6 +223,7 @@ class Services:
     def __init__(self, settings, model_log_path, on_overflow: Callable[[str], None] | None = None,
                  on_model_failures: Callable[[str, int], None] | None = None):
         self.s = settings
+        self.anthropic = getattr(settings, "provider", "openai") == "anthropic"
         self.model_log_path = model_log_path
         self.on_overflow = on_overflow or (lambda key: None)
         self.on_model_failures = on_model_failures or (lambda key, n: None)
@@ -165,30 +257,61 @@ class Services:
         for key in agent_keys:
             self.calls[key] = AgentCalls()
 
-    # ---- model proxy ----------------------------------------------------------------------------------
+    # ---- upstream ---------------------------------------------------------------------------------------
     def upstream_url(self, tail: str) -> str:
         return self.s.base_url.rstrip("/") + "/" + tail.lstrip("/")
 
     def upstream_headers(self, incoming: dict | None = None) -> dict:
         headers = {k: v for k, v in (incoming or {}).items() if k.lower() not in HOP_HEADERS}
         headers["Accept-Encoding"] = "identity"
-        if self.s.api_key:
+        if self.anthropic:
+            if self.s.api_key:
+                headers["x-api-key"] = self.s.api_key
+            if not any(k.lower() == "anthropic-version" for k in headers):
+                headers["anthropic-version"] = ANTHROPIC_VERSION
+        elif self.s.api_key:
             headers["Authorization"] = f"Bearer {self.s.api_key}"
         return headers
 
+    def completion_path(self) -> str:
+        return "v1/messages" if self.anthropic else "chat/completions"
+
+    def is_completion(self, tail: str) -> bool:
+        tail = tail.rstrip("/")
+        if self.anthropic:
+            return tail == "messages" or tail.endswith("/messages")
+        return tail.endswith("chat/completions")
+
+    async def probe(self) -> tuple[Upstream, int]:
+        """A minimal 1-token completion, used as the startup reachability check."""
+        body = {"model": self.s.model_alias, "max_tokens": 1,
+                "messages": [{"role": "user", "content": "Reply with OK."}]}
+        if not self.anthropic:
+            body["stream"] = False
+        return await self.fetch("POST", self.upstream_url(self.completion_path()), json.dumps(body).encode(),
+                                {**self.upstream_headers(), "Content-Type": "application/json"})
+
     def _rewrite(self, key: str, payload: dict) -> dict:
-        for m in payload.get("messages") or []:
-            if m.get("role") == "developer":
-                m["role"] = "system"
-        if self.s.inject_max_tokens and "max_tokens" not in payload and "max_completion_tokens" not in payload:
-            payload["max_tokens"] = self.s.max_output_tokens
-        if payload.get("stream"):
-            payload.setdefault("stream_options", {})["include_usage"] = True
-        params = {k: v for k, v in payload.items() if k not in ("messages", "tools")}
+        if not self.anthropic:
+            for m in payload.get("messages") or []:
+                if m.get("role") == "developer":
+                    m["role"] = "system"
+            if self.s.inject_max_tokens and "max_tokens" not in payload and "max_completion_tokens" not in payload:
+                payload["max_tokens"] = self.s.max_output_tokens
+            if payload.get("stream"):
+                payload.setdefault("stream_options", {})["include_usage"] = True
+        params = {k: v for k, v in payload.items() if k not in ("messages", "tools", "system")}
         calls = self.calls[key]
         if params not in calls.sampling_params and len(calls.sampling_params) < 20:
             calls.sampling_params.append(params)
         return payload
+
+    def _stream_failed(self, up: Upstream) -> bool:
+        """Anthropic can report overload as an `error` event inside a 200 stream."""
+        if not self.anthropic or up.status != 200 or "text/event-stream" not in up.content_type:
+            return False
+        c = inspect_response(up.body, True, "anthropic")
+        return c.stream_error is not None and not c.complete
 
     async def fetch(self, method: str, url: str, body: bytes | None, headers: dict) -> tuple[Upstream, int]:
         """Request with retries; returns (response, retries used). Never raises."""
@@ -201,11 +324,29 @@ class Services:
                     up = Upstream(r.status, r.headers.get("Content-Type", ""), data)
             except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
                 up = Upstream(599, "text/plain", b"", error=f"{type(e).__name__}: {e}")
-            if up.status not in RETRY_STATUS or retries >= self.s.model_retries:
+            retryable = up.status in RETRY_STATUS or self._stream_failed(up)
+            if not retryable or retries >= self.s.model_retries:
                 return up, retries
             retries += 1
             delay = min(self.s.model_backoff_max_seconds, self.s.model_backoff_seconds * 2 ** (retries - 1))
             await asyncio.sleep(delay)
+
+    # ---- proxy ------------------------------------------------------------------------------------------------
+    def _models_response(self) -> web.Response:
+        if self.anthropic:
+            return web.json_response({"data": [{"id": self.s.model_alias, "type": "model",
+                                                "display_name": self.s.model_alias}],
+                                      "has_more": False, "first_id": self.s.model_alias,
+                                      "last_id": self.s.model_alias})
+        return web.json_response({"object": "list", "data": [
+            {"id": self.s.model_alias, "object": "model", "owned_by": "ttc"}]})
+
+    def _stream_error_event(self, message: str, status: int) -> bytes:
+        if self.anthropic:
+            err = {"type": "error", "error": {"type": "api_error", "message": message}}
+            return f"event: error\ndata: {json.dumps(err)}\n\n".encode()
+        err = {"error": {"message": message, "type": "upstream_error", "code": status}}
+        return f"data: {json.dumps(err)}\n\n".encode()
 
     async def llm_proxy(self, request: web.Request) -> web.StreamResponse:
         key = request.match_info["key"]
@@ -213,8 +354,7 @@ class Services:
             raise web.HTTPForbidden(text="unknown agent key")
         tail = request.match_info["tail"]
         if tail.rstrip("/").endswith("models"):
-            return web.json_response({"object": "list", "data": [
-                {"id": self.s.model_alias, "object": "model", "owned_by": "ttc"}]})
+            return self._models_response()
 
         body = await request.read()
         payload = None
@@ -223,7 +363,7 @@ class Services:
                 payload = json.loads(body)
             except json.JSONDecodeError:
                 payload = None
-        is_chat = tail.endswith("chat/completions") and isinstance(payload, dict)
+        is_chat = self.is_completion(tail) and isinstance(payload, dict)
         streaming = bool(is_chat and payload.get("stream"))
         if is_chat:
             payload = self._rewrite(key, payload)
@@ -249,13 +389,16 @@ class Services:
                     await asyncio.wait({task}, timeout=self.s.sse_keepalive_interval_seconds)
         up, retries = await task
 
-        ok = 200 <= up.status < 300
+        ok = 200 <= up.status < 300 and not self._stream_failed(up)
         is_sse = "text/event-stream" in up.content_type
-        comp = inspect_response(up.body, is_sse) if (ok and is_chat) else Completion()
-        self._account(key, t0, tail, up, retries, comp, is_chat)
+        provider = "anthropic" if self.anthropic else "openai"
+        comp = inspect_response(up.body, is_sse, provider) if (ok and is_chat) else Completion()
+        if is_chat and not ok and is_overflow_error(up.status, up.body):
+            comp.overflow_error = True
+        self._account(key, t0, tail, up, retries, comp, is_chat, ok)
 
         if resp is None:
-            if not ok and not up.body:
+            if not up.body and up.status >= 400:
                 return web.Response(status=502 if up.status == 599 else up.status,
                                     text=f"upstream error: {up.error or up.status}")
             return web.Response(status=up.status, body=up.body,
@@ -264,23 +407,21 @@ class Services:
         try:
             if ok and is_sse:
                 await resp.write(up.body)
-            elif ok:  # upstream ignored stream=true; wrap the JSON completion as one SSE event
+            elif ok and not self.anthropic:  # upstream ignored stream=true; wrap the JSON as one event
                 await resp.write(b"data: " + up.body.strip() + b"\n\ndata: [DONE]\n\n")
             else:
-                err = {"error": {"message": f"upstream error {up.status}: {up.error or up.body[:500].decode(errors='replace')}",
-                                 "type": "upstream_error", "code": up.status}}
-                await resp.write(f"data: {json.dumps(err)}\n\n".encode())
+                detail = up.error or up.body[:500].decode(errors="replace")
+                await resp.write(self._stream_error_event(f"upstream error {up.status}: {detail}", up.status))
             await resp.write_eof()
         except (ConnectionResetError, RuntimeError):
             pass
         return resp
 
     def _account(self, key: str, t0: float, tail: str, up: Upstream, retries: int, comp: Completion,
-                 is_chat: bool) -> None:
+                 is_chat: bool, ok: bool) -> None:
         a = self.calls.get(key)
         if a is None or not is_chat:
             return
-        ok = 200 <= up.status < 300
         u = normalize_usage(comp.usage)
         a.requests += 1
         a.retries += retries
@@ -291,11 +432,14 @@ class Services:
             a.output_tokens += u.get("output_tokens", 0)
             a.reasoning_tokens += u.get("reasoning_tokens", 0)
             a.cached_tokens += u.get("cached_tokens", 0)
+            a.cache_write_tokens += u.get("cache_write_tokens", 0)
             a.timeline.append((time.time(), u.get("output_tokens", 0)))
             if comp.is_overflow:
                 a.context_overflows += 1
-            elif comp.finish_reason == "length":
+            elif comp.is_truncated:
                 a.truncated += 1
+        elif comp.is_overflow:
+            a.context_overflows += 1
         else:
             a.failed += 1
             a.consecutive_failures += 1
@@ -306,7 +450,7 @@ class Services:
                 "latency_s": round(time.time() - t0, 3), "finish_reason": comp.finish_reason,
                 "overflow": comp.is_overflow, **u}) + "\n")
             self._log.flush()
-        if ok and comp.is_overflow:
+        if comp.is_overflow:
             self.on_overflow(key)
         elif not ok:
             self.on_model_failures(key, a.consecutive_failures)

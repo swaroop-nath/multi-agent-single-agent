@@ -37,6 +37,7 @@ def test_argv_isolates_and_resumes(tmp_path):
     assert first[first.index("--effort") + 1] == "max"
     denied = first[first.index("--disallowedTools") + 1].split(",")
     assert {"WebSearch", "WebFetch", "SendMessage", "Workflow", "RemoteTrigger"} <= set(denied) == set(CLAUDE_DISALLOWED_TOOLS)
+    assert json.loads(first[first.index("--settings") + 1])["showThinkingSummaries"] is True
     again = cli.argv(tmp_path, "sid", 1, "PROMPT")
     assert again[2] == "continue" and again[again.index("--resume") + 1] == "sid"
 

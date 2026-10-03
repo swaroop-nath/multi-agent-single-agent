@@ -6,3 +6,9 @@ runs/
 arc_envs/
 analysis/
 results/
+
+# credentials: never commit
+*.token
+.ttc-claude-token
+.env
+.env.*

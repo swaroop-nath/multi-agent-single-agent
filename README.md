@@ -77,6 +77,10 @@ How each agent's Claude Code is set up:
 - `--safe-mode` and a fresh per-agent `CLAUDE_CONFIG_DIR`, with auto-memory and CLAUDE.md loading
   switched off: nothing from your own `~/.claude` (instructions, memories, plugins, hooks, MCP
   servers) reaches the agents.
+- `showThinkingSummaries` is on, so the summarized thinking text is recorded (by default Claude
+  Code keeps only an encrypted signature, with no readable text).
+- Claude Code caps each response at 32k output tokens. At `--effort max`, one response can spend
+  minutes thinking and hit that cap before acting; `--effort high` avoids most of this.
 - Tools that would break the experiment are disallowed: web search/fetch (closed book), messaging
   other local Claude sessions (it would let separate trials talk), multi-agent workflows,
   scheduling, worktrees and remote triggers. Its subagent tool stays, like Copilot's.

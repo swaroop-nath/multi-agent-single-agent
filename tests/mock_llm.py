@@ -74,6 +74,7 @@ class Mock:
                                         "auth": request.headers.get("Authorization"),
                                         "x_api_key": request.headers.get("x-api-key"),
                                         "anthropic_version": request.headers.get("anthropic-version"),
+                                        "anthropic_beta": request.headers.get("anthropic-beta"),
                                         "body": body}) + "\n")
             self.dump.flush()
 

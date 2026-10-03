@@ -12,6 +12,7 @@ Claude Code (`--agent-cli claude-code`), run headless with:
                             and CLAUDE.md loading are also switched off by environment variable
   --disallowedTools         no web access, no messaging other local Claude sessions, no
                             multi-agent workflows, no scheduling or worktrees
+  showThinkingSummaries     record the summarized thinking text (otherwise only a signature is kept)
   auth                      `subscription`: a long-lived token from `claude setup-token`, given as
                             CLAUDE_CODE_OAUTH_TOKEN (talks to Anthropic directly; usage is read from
                             Claude Code's own transcripts). `api-key`: ANTHROPIC_API_KEY, routed through
@@ -100,7 +101,9 @@ class ClaudeCodeCLI:
         return self.st.claude_auth == "api-key"
 
     def _settings(self) -> str:
-        s: dict = {"cleanupPeriodDays": 3650}
+        # showThinkingSummaries: without it Claude Code records thinking as an empty block with only an
+        # encrypted signature; with it, the summarized thinking text is kept (verified on a real run)
+        s: dict = {"cleanupPeriodDays": 3650, "showThinkingSummaries": True}
         if self.via_proxy:
             s["apiKeyHelper"] = "echo ttc-local-proxy"  # the proxy swaps in the real key
         return json.dumps(s)

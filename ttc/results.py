@@ -4,10 +4,11 @@
       result.json                     identity, outcome/score, per-agent termination + tokens, versions
       trajectories/
         prompt.md                     the exact prompt every agent received
-        agent-<i>.events.jsonl.gz     Copilot's event stream: messages, the model's reasoning
-                                      (assistant.reasoning), tool calls and their full results
-        agent-<i>-private.tar.gz      the agent's private state: Copilot session store (full
-                                      session history), home and temp dirs, Copilot logs
+        agent-<i>.events.jsonl.gz     the agent CLI's event stream: messages, the model's reasoning,
+                                      tool calls and their full results
+        agent-<i>-private.tar.gz      the agent's private state: the CLI's session store (full session
+                                      history: Copilot's or Claude Code's transcripts), home and temp
+                                      dirs, logs
         model_responses.jsonl.gz      every raw model response the proxy relayed (incl. thinking)
         model_calls.jsonl.gz          every model call: agent, status, retries, latency, tokens
         game_events.jsonl.gz          ARC: every game action, refusal and session end
@@ -52,6 +53,8 @@ def _keep_event(line: bytes) -> bool:
         t = json.loads(line).get("type", "")
     except (json.JSONDecodeError, AttributeError):
         return True  # keep non-JSON output (e.g. CLI error messages)
+    if t == "stream_event" or (t == "system" and json.loads(line).get("subtype") == "thinking_tokens"):
+        return False  # Claude Code partial-message and token-estimate noise
     return not (t.endswith("_delta") or t in NOISE_EVENTS)
 
 
@@ -83,7 +86,7 @@ def write_trajectories(work: Path, results: Path, k: int, extra: dict[str, Path]
     for i in range(k):
         a = work / "agents" / str(i)
         gzip_file(a / "stdout.jsonl", traj / f"agent-{i}.events.jsonl.gz", keep=_keep_event)
-        tar_dir([(a / sub, f"agent-{i}/{sub}") for sub in ("copilot_home", "home", "tmp", "logs")],
+        tar_dir([(a / sub, f"agent-{i}/{sub}") for sub in ("copilot_home", "claude_config", "home", "tmp", "logs")],
                 traj / f"agent-{i}-private.tar.gz", max_file_bytes=MAX_PRIVATE_FILE_BYTES)
     gzip_file(work / "model_calls.jsonl", traj / "model_calls.jsonl.gz")
     gzip_file(work / "model_io" / "responses.jsonl", traj / "model_responses.jsonl.gz")

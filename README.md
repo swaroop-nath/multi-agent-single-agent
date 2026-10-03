@@ -8,9 +8,17 @@ is empty, so this is rebuilt from the paper. It covers two of the paper's tasks:
 * **Frontier-CS polyomino packing** (`--task polyomino`): Frontier-CS algorithmic problem 0,
   scored on its 70 test cases with the upstream checker.
 
-As in the paper, each agent is **GitHub Copilot CLI**, run in BYOK ("bring your own key") mode
-with `COPILOT_OFFLINE=true`: no GitHub account or Copilot subscription, and no network access
-apart from model calls. Two providers are supported (`--provider`):
+Each agent is a coding-agent CLI (`--agent-cli`):
+
+* `copilot` (default): **GitHub Copilot CLI**, as in the paper.
+* `claude-code`: **Claude Code**, e.g. with a Claude.ai subscription. Prompts, tasks, verifiers and
+  results are identical, but the agent harness differs from the paper's (its own system prompt,
+  tools and context management), so results are not directly comparable to the paper's numbers.
+  Team-vs-solo comparisons within a run set remain fair. See "Running with Claude Code" below.
+
+Copilot runs in BYOK ("bring your own key") mode with `COPILOT_OFFLINE=true`: no GitHub account or
+Copilot subscription, and no network access apart from model calls. Two providers are supported
+(`--provider`):
 
 * `anthropic`: Claude models through the Anthropic Messages API, with an API key from the
   Anthropic Console in `ANTHROPIC_API_KEY` (a Claude.ai subscription can't be used here).
@@ -50,6 +58,50 @@ Inside Docker, pass the key with `-e ANTHROPIC_API_KEY` and mount a results dire
 `--price-*` flags (USD per million tokens) only fill in `estimated_cost_usd` in `result.json`;
 check current prices before relying on them. One observation: in Anthropic mode Copilot sends
 `max_tokens: 32000` regardless of `--max-output-tokens`.
+
+### Running with Claude Code
+
+```bash
+claude setup-token                        # once: a long-lived token for your Claude subscription
+export CLAUDE_CODE_OAUTH_TOKEN=...        # the token it prints
+COMMON="--task polyomino --agent-cli claude-code --model-alias claude-sonnet-4-6 --reasoning-effort max \
+  --max-wall-seconds 10800 --price-input 3 --price-output 15 --price-cache-read 0.3 --price-cache-write 3.75"
+ttc trial $COMMON --mode team --k 3 --trial 0 --results-dir results/team3-0 --port 8700 &
+for t in 0 1 2; do
+  ttc trial $COMMON --mode solo --k 1 --trial $t --results-dir results/solo-$t --port $((8701 + t)) &
+done
+wait
+```
+
+How each agent's Claude Code is set up:
+- `--safe-mode` and a fresh per-agent `CLAUDE_CONFIG_DIR`, with auto-memory and CLAUDE.md loading
+  switched off: nothing from your own `~/.claude` (instructions, memories, plugins, hooks, MCP
+  servers) reaches the agents.
+- Tools that would break the experiment are disallowed: web search/fetch (closed book), messaging
+  other local Claude sessions (it would let separate trials talk), multi-agent workflows,
+  scheduling, worktrees and remote triggers. Its subagent tool stays, like Copilot's.
+- Subscription usage limits: when Claude Code reports a limit, the agent waits
+  (`--limit-wait-seconds`, default 10 min) and resumes the same session; the wait counts against
+  the trial's wall clock and is recorded per agent (`usage_limit_waits`).
+- Tokens come from Claude Code's own transcripts, and `reported_cost_usd` is Claude Code's own
+  (list-price) figure; with a subscription that is not what you pay. `--claude-auth api-key`
+  (with `--provider anthropic` and `ANTHROPIC_API_KEY`) routes Claude Code through the local
+  proxy instead, for exact per-call accounting, retries, and the raw model responses.
+- The image does not include Claude Code yet; run it natively (below) or add it to the image.
+
+### Running natively on a Mac (no Docker)
+
+Fine for pilots, with three caveats: agents run as your user, so nothing *enforces* that they
+stay out of the hidden test data or your files (they're told to; audit with `ttc trace`);
+memory limits are checked after the fact rather than enforced; and Apple's compiler lacks
+`bits/stdc++.h`, so use GCC for the judge (agents then get the same GCC as `g++`):
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -e .
+brew install gcc                                    # provides g++-15 (or similar)
+.venv/bin/ttc fetch-frontiercs --dir ~/ttc-data/frontiercs
+# add to the trial commands:  --frontiercs-dir ~/ttc-data/frontiercs --judge-compiler g++-15
+```
 
 Task lists are in `manifests/`; each entry carries its own `max_wall_seconds`. Regenerate
 with `ttc manifest NAME`.
@@ -192,12 +244,15 @@ result.json                     schema_version 2 (see below)
 best_solution.cpp               polyomino: the best valid submission
 trajectories/
   prompt.md                     the exact prompt every agent received
-  agent-<i>.events.jsonl.gz     Copilot event stream: the model's reasoning (assistant.reasoning),
-                                messages, every tool call and its full result
-  agent-<i>-private.tar.gz      the agent's private state: Copilot's session store (complete
-                                session history), its home and temp dirs, Copilot logs
+  agent-<i>.events.jsonl.gz     the agent CLI's event stream: the model's reasoning, messages,
+                                every tool call and its full result
+  agent-<i>-private.tar.gz      the agent's private state: the CLI's session store (Copilot's, or
+                                Claude Code's full transcripts incl. subagents), its home and
+                                temp dirs, logs
   model_responses.jsonl.gz      every raw model response the proxy relayed, thinking included
-                                (--log-model-responses, on by default)
+                                (--log-model-responses, on by default; empty for Claude Code with
+                                a subscription, whose calls bypass the proxy: its transcripts in
+                                agent-<i>-private.tar.gz have the same content)
   model_calls.jsonl.gz          every model call: agent, status, retries, latency, finish_reason, tokens
   shared_workspace.tar.gz       the shared folder (findings, disconfirmations, slots, score log,
                                 coordination) and every agent's scratch/work-<slot> dir

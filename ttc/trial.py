@@ -27,6 +27,7 @@ from importlib import metadata
 from pathlib import Path
 
 from . import prompts
+from .agent_cli import ClaudeCodeCLI, make_cli
 from .agents import AgentLauncher
 from .results import write_json, write_trajectories
 from .services import Services, estimate_cost
@@ -39,13 +40,13 @@ POLL_S = 2.0
 SCHEMA_VERSION = 2
 
 
-def _versions(copilot_version: str | None) -> dict:
+def _versions(agent_cli: str, cli_version: str | None) -> dict:
     def v(pkg):
         try:
             return metadata.version(pkg)
         except metadata.PackageNotFoundError:
             return None
-    out = {"harness": v("ttc"), "copilot_cli": copilot_version, "arc_agi": v("arc-agi"),
+    out = {"harness": v("ttc"), "agent_cli": agent_cli, "agent_cli_version": cli_version, "arc_agi": v("arc-agi"),
            "arcengine": v("arcengine"), "aiohttp": v("aiohttp"), "python": platform.python_version()}
     build_info = Path(os.environ.get("TTC_BUILD_INFO", "/app/build_info.json"))
     if build_info.exists():
@@ -72,14 +73,19 @@ class Trial:
         self.keys = [f"{self.label}.{i}" for i in range(st.k)]
         self.exit_codes: list[list[int | None]] = [[] for _ in range(st.k)]
         self.crashes = [0] * st.k
+        self.limit_waits = [0] * st.k  # Claude subscription usage-limit pauses
+        self.limit_wait_seconds = [0.0] * st.k
         self.ended_by = "all_agents_done"
-        self.copilot_version: str | None = None
+        self.cli = make_cli(st)
+        self.cli_version: str | None = None
         self.preflight: dict = {}
         self.services: Services | None = None
         self.task_ready = False
 
     # ---- preflight ---------------------------------------------------------------------------------
     async def _check_model(self) -> None:
+        if isinstance(self.cli, ClaudeCodeCLI) and not self.cli.via_proxy:
+            return await self._check_claude_subscription()
         assert self.services is not None
         t0 = time.time()
         up, retries = await self.services.probe()
@@ -94,6 +100,25 @@ class Trial:
         if up.status >= 400:  # reachable, but the probe was refused; record and continue
             log.warning("model preflight returned %s: %s", up.status, up.body[:300])
 
+    async def _check_claude_subscription(self) -> None:
+        """One tiny real request through Claude Code with the subscription token."""
+        t0 = time.time()
+        rc, out = await self.launcher.run(0, self.cli.probe_argv(), self._agent_env(0), str(self.work / "task"),
+                                          timeout=300)
+        try:
+            r = json.loads(out.strip().splitlines()[-1]) if out.strip() else {}
+        except (json.JSONDecodeError, IndexError):
+            r = {}
+        text = str(r.get("result") or out[-300:])
+        self.preflight["model"] = {"agent_cli": "claude-code", "auth": "subscription", "rc": rc,
+                                   "is_error": r.get("is_error"), "latency_s": round(time.time() - t0, 1),
+                                   "result": text[:200]}
+        if rc != 0 or r.get("is_error") or not r:
+            from .agent_cli import AUTH_PATTERN, LIMIT_PATTERN
+            why = ("subscription usage limit reached" if LIMIT_PATTERN.search(text) else
+                   "subscription token rejected" if AUTH_PATTERN.search(text) else "Claude Code request failed")
+            raise InfraError(2, f"{why}: {text[:300]}")
+
     async def _check_agent_path(self) -> None:
         env0 = self._agent_env(0)
         cwd = str(self.work / "task")
@@ -102,10 +127,10 @@ class Trial:
             return await self.launcher.run(0, argv, env0, cwd)
 
         self.preflight.update(await self.task.preflight_agent(run_as_agent0))
-        rc, out = await self.launcher.run(0, [self.st.copilot_binary, "--version"], env0, cwd, timeout=120)
+        rc, out = await self.launcher.run(0, self.cli.version_argv(), env0, cwd, timeout=120)
         if rc != 0:
-            raise InfraError(3, f"copilot CLI not runnable as agent (rc={rc}): {out[:300]}")
-        self.copilot_version = out.strip().splitlines()[0] if out.strip() else None
+            raise InfraError(3, f"{self.cli.name} not runnable as agent (rc={rc}): {out[:300]}")
+        self.cli_version = out.strip().splitlines()[0] if out.strip() else None
 
     # ---- setup -----------------------------------------------------------------------------------------
     def _prepare_dirs(self) -> None:
@@ -115,7 +140,7 @@ class Trial:
             (self.work / sub).mkdir(parents=True)
         for i in range(self.k):
             a = self.work / "agents" / str(i)
-            for sub in ("home", "copilot_home", "logs", "tmp"):
+            for sub in sorted({"home", "logs", "tmp", *self.cli.private_dirs()}):
                 (a / sub).mkdir(parents=True)
             (a / "stdout.jsonl").touch()
             self.launcher.chown(i, a)
@@ -151,7 +176,7 @@ class Trial:
         st = self.st
         a = self.work / "agents" / str(i)
         base_path = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-        if not self.launcher.drop:  # development: keep the host PATH (node, copilot)
+        if not self.launcher.drop:  # development: keep the host PATH (node, copilot, claude)
             base_path = os.environ.get("PATH", base_path)
         return {
             "PATH": f"{self.work / 'task' / 'bin'}:{base_path}",
@@ -160,34 +185,10 @@ class Trial:
             "LANG": "C.UTF-8",
             "TERM": "dumb",
             "NO_COLOR": "1",
-            "COPILOT_PROVIDER_BASE_URL": f"http://{st.host}:{st.port}/llm/{self.keys[i]}",
-            "COPILOT_PROVIDER_TYPE": st.provider,
-            "COPILOT_PROVIDER_API_KEY": "ttc-local-proxy",  # the real key never reaches agents
-            "COPILOT_MODEL": st.model_alias,
-            "COPILOT_PROVIDER_MAX_PROMPT_TOKENS": str(st.max_prompt_tokens),
-            "COPILOT_PROVIDER_MAX_OUTPUT_TOKENS": str(st.max_output_tokens),
-            "COPILOT_OFFLINE": "true",
-            "COPILOT_AUTO_UPDATE": "false",
-            "COPILOT_HOME": str(a / "copilot_home"),
-            **({"COPILOT_PROVIDER_WIRE_API": "completions"} if st.provider == "openai" else {}),
+            **self.cli.env(i, a, f"http://{st.host}:{st.port}/llm/{self.keys[i]}"),
+            **dict(kv.split("=", 1) for kv in st.extra_agent_env),
             **self.task.agent_env(i, st.host, st.port),
         }
-
-    def _copilot_argv(self, i: int, session_id: str, attempt: int, prompt: str) -> list[str]:
-        st = self.st
-        a = self.work / "agents" / str(i)
-        argv = [st.copilot_binary]
-        if attempt == 0:
-            argv += ["--session-id", session_id, "-p", prompt]
-        else:
-            argv += ["--resume", session_id, "-p", st.continue_prompt]
-        argv += ["--allow-all", "--no-ask-user", "--no-auto-update", "--no-custom-instructions",
-                 "--disable-builtin-mcps", "--output-format", "json",
-                 "--log-dir", str(a / "logs"), "--log-level", st.copilot_log_level,
-                 "--usage-output-file", str(a / f"usage-{attempt:03d}.json")]
-        if st.reasoning_effort:
-            argv += ["--reasoning-effort", st.reasoning_effort]
-        return argv + list(st.copilot_extra_args)
 
     # ---- callbacks from the proxy -------------------------------------------------------------------------
     def _index(self, key: str) -> int:
@@ -205,10 +206,14 @@ class Trial:
         s = self.task.sessions[i]
         env = self._agent_env(i)
         session_id = str(uuid.uuid4())
-        stdout = self.work / "agents" / str(i) / "stdout.jsonl"
+        a = self.work / "agents" / str(i)
+        stdout = a / "stdout.jsonl"
         attempt = 0
+        relaunches = 0
+        consecutive_errors = 0
         while True:
-            proc = await self.launcher.spawn(i, self._copilot_argv(i, session_id, attempt, prompt), env,
+            before = len(ClaudeCodeCLI._results(stdout)) if isinstance(self.cli, ClaudeCodeCLI) else 0
+            proc = await self.launcher.spawn(i, self.cli.argv(a, session_id, attempt, prompt), env,
                                              str(self.work / "task"), stdout)
             killed = False
             while proc.returncode is None:
@@ -220,7 +225,11 @@ class Trial:
                     killed = True
                     await self.launcher.kill(proc)
             self.exit_codes[i].append(proc.returncode)
-            if not killed and proc.returncode not in (0, None):
+            attempt += 1
+            outcome = None
+            if not killed and isinstance(self.cli, ClaudeCodeCLI) and len(ClaudeCodeCLI._results(stdout)) > before:
+                outcome = self.cli.last_outcome(stdout)
+            if not killed and proc.returncode not in (0, None) and outcome is None:
                 self.crashes[i] += 1
             if s.status != "active":
                 return
@@ -230,12 +239,44 @@ class Trial:
             if self.task.stop_requested():
                 self.task.retire(i, "teammate_won")
                 return
-            if attempt >= self.st.max_relaunches:
+            if outcome == "overflow":
+                self.task.retire(i, "context_overflow")
+                return
+            if outcome == "limit":  # subscription usage limit: wait, then resume the same session
+                wait = max(0.0, min(self.st.limit_wait_seconds, self.deadline - time.time()))
+                self.limit_waits[i] += 1
+                self.limit_wait_seconds[i] += wait
+                log.warning("%s agent %d hit a usage limit; waiting %.0fs", self.label, i, wait)
+                await asyncio.sleep(wait)
+                continue
+            if outcome in ("auth", "error"):
+                consecutive_errors += 1
+                if outcome == "auth" or consecutive_errors >= self.st.model_error_limit:
+                    self.task.retire(i, "model_errors")
+                    return
+            else:
+                consecutive_errors = 0
+            if relaunches >= self.st.max_relaunches:
                 self.task.retire(i, "agent_exited")
                 return
-            attempt += 1
-            log.info("%s agent %d exited (%s); relaunch %d", self.label, i, proc.returncode, attempt)
-            await asyncio.sleep(min(60, 2 * attempt))
+            relaunches += 1
+            log.info("%s agent %d exited (%s); relaunch %d", self.label, i, proc.returncode, relaunches)
+            await asyncio.sleep(min(60, 2 * relaunches))
+
+    def _collect_claude_usage(self) -> None:
+        """Claude Code: per-agent tokens from its transcripts (subscription auth bypasses the proxy)."""
+        if not isinstance(self.cli, ClaudeCodeCLI) or self.services is None:
+            return
+        from .services import AgentCalls
+        for i, key in enumerate(self.keys):
+            a = self.work / "agents" / str(i)
+            u = self.cli.usage(a, a / "stdout.jsonl")
+            calls = self.services.calls.setdefault(key, AgentCalls())
+            calls.reported_cost_usd = u["reported_cost_usd"]
+            if not self.cli.via_proxy:
+                for f in ("requests", "ok", "failed", "prompt_tokens", "output_tokens", "cached_tokens",
+                          "cache_write_tokens", "timeline"):
+                    setattr(calls, f, u[f])
 
     async def run(self) -> int:
         st = self.st
@@ -269,6 +310,7 @@ class Trial:
             self.task.mark_start()
             log.info("%s: %d agent(s) starting; deadline in %.0fs", self.label, self.k, self.deadline - time.time())
             await asyncio.gather(*(self._agent_loop(i, prompt) for i in range(self.k)))
+            self._collect_claude_usage()
             if any(s.end_reason == "wall_clock" for s in self.task.sessions):
                 self.ended_by = "wall_clock"
             elif self.task.stop_requested():
@@ -334,6 +376,7 @@ class Trial:
         out: dict = {
             "schema_version": SCHEMA_VERSION,
             "trial": {"label": self.label, "task": st.task, "mode": st.mode, "k": st.k, "trial": st.trial,
+                      "agent_cli": self.cli.name, "model": st.model_alias,
                       **(self.task.identity() if self.task_ready else {"game": st.game})},
             "status": "ok" if code == 0 else "infra_error",
             "exit_code": code,
@@ -342,7 +385,7 @@ class Trial:
             "termination": {"ended_by": self.ended_by, "wall_seconds": round(time.time() - self.t_start, 1),
                             "max_wall_seconds": st.max_wall_seconds, "wall_margin_seconds": st.wall_margin_seconds},
             "preflight": self.preflight,
-            "versions": _versions(self.copilot_version),
+            "versions": _versions(self.cli.name, self.cli_version),
             "config": st.public_dict(),
         }
         if not self.task_ready:
@@ -359,7 +402,9 @@ class Trial:
                 **task_agents[i],
                 "model_calls": ({**c.summary(), "estimated_cost_usd": estimate_cost(c.summary(), st)}
                                 if c else None),
-                "copilot_exit_codes": self.exit_codes[i], "copilot_crashes": self.crashes[i],
+                "cli_exit_codes": self.exit_codes[i], "cli_crashes": self.crashes[i],
+                "usage_limit_waits": self.limit_waits[i],
+                "usage_limit_wait_seconds": round(self.limit_wait_seconds[i], 1),
                 "relaunches": max(0, len(self.exit_codes[i]) - 1),
             })
         total = {f: sum(calls[k].__dict__[f] for k in self.keys if k in calls)
@@ -367,6 +412,9 @@ class Trial:
                            "prompt_tokens", "output_tokens", "reasoning_tokens", "cached_tokens",
                            "cache_write_tokens")}
         total["estimated_cost_usd"] = estimate_cost(total, st)
+        reported = [getattr(calls[k], "reported_cost_usd", None) for k in self.keys if k in calls]
+        if any(r is not None for r in reported):
+            total["reported_cost_usd"] = round(sum(r or 0 for r in reported), 4)  # Claude Code's own figure
         out["outcome"] = outcome
         out.update(extra)
         out["agents"] = agents
@@ -377,7 +425,8 @@ class Trial:
             "context_overflows": total["context_overflows"],
             "agents_ended_by_model_errors": sum(a["termination_reason"] == "model_errors" for a in agents),
             "agents_ended_by_context_overflow": sum(a["termination_reason"] == "context_overflow" for a in agents),
-            "copilot_crashes": sum(self.crashes),
+            "cli_crashes": sum(self.crashes),
+            "usage_limit_waits": sum(self.limit_waits),
         }
         out["sampling_params_sent"] = {str(i): calls[k].sampling_params for i, k in enumerate(self.keys) if k in calls}
         return out

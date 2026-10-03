@@ -101,6 +101,10 @@ class PolyominoTask(Task):
         (self.work / "submissions").mkdir()
         os.chmod(self.work / "submissions", 0o700)
         task = self.work / "task"
+        if st.judge_compiler != "g++":  # agents compile locally with the same compiler as the judge
+            compiler = shutil.which(st.judge_compiler)
+            if compiler:
+                (task / "bin" / "g++").symlink_to(compiler)
         client = task / "bin" / "submit"
         client.write_text(files("ttc.tasks").joinpath("submit_client.py").read_text())
         client.chmod(0o755)

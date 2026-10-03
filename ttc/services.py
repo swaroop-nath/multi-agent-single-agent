@@ -59,6 +59,7 @@ class AgentCalls:
     cached_tokens: int = 0  # cache reads
     cache_write_tokens: int = 0  # anthropic cache creation
     consecutive_failures: int = 0
+    reported_cost_usd: float | None = None  # Claude Code's own cost figure, when it runs the agent
     timeline: list = field(default_factory=list)  # (t, output_tokens) per completed call
     sampling_params: list = field(default_factory=list)  # distinct non-message params Copilot sent
 

@@ -1,7 +1,9 @@
 """Settings for one trial, built from command-line arguments (`run_trial --help`).
 
-Every task parameter is a command-line argument. The only environment inputs are the model
-endpoint and its key:
+Every task parameter is a command-line argument. The only environment inputs are credentials:
+  --agent-cli claude-code --claude-auth subscription
+                        CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`)
+and, for Copilot or `--claude-auth api-key`, the model endpoint and its key:
   --provider openai     OPENAI_BASE_URL (or OPENAI_API_BASE) and OPENAI_API_KEY
   --provider anthropic  ANTHROPIC_API_KEY, and optionally ANTHROPIC_BASE_URL
                         (default https://api.anthropic.com)
@@ -61,6 +63,15 @@ class TrialSettings:
     skip_model_preflight: bool = False
     log_model_responses: bool = True  # save every raw model response (incl. thinking)
 
+    # agent CLI: copilot (the paper's harness) or claude-code
+    agent_cli: str = "copilot"
+    claude_binary: str = "claude"
+    claude_auth: str = "subscription"  # subscription (CLAUDE_CODE_OAUTH_TOKEN) | api-key (via the proxy)
+    claude_extra_args: list[str] = field(default_factory=list)
+    limit_wait_seconds: float = 600.0  # subscription usage limit hit: wait this long, then resume
+    extra_agent_env: list[str] = field(default_factory=list)  # KEY=VALUE pairs (testing aid)
+    oauth_token: str | None = field(default=None, repr=False)
+
     # Copilot CLI
     copilot_binary: str = "copilot"
     copilot_extra_args: list[str] = field(default_factory=list)
@@ -104,6 +115,15 @@ class TrialSettings:
     def __post_init__(self) -> None:
         if self.provider not in PROVIDERS:
             raise ValueError(f"provider must be one of {PROVIDERS}")
+        if self.agent_cli not in ("copilot", "claude-code"):
+            raise ValueError("agent_cli must be copilot or claude-code")
+        if self.agent_cli == "claude-code":
+            if self.claude_auth not in ("subscription", "api-key"):
+                raise ValueError("claude_auth must be subscription or api-key")
+            if self.claude_auth == "api-key" and self.provider != "anthropic":
+                raise ValueError("--agent-cli claude-code --claude-auth api-key needs --provider anthropic")
+            if self.model_alias == "ttc-model":
+                raise ValueError("Claude Code needs a real model id, e.g. --model-alias claude-sonnet-4-6")
         if self.provider == "anthropic" and self.model_alias == "ttc-model":
             raise ValueError("--provider anthropic needs a real model id, e.g. --model-alias claude-sonnet-4-6")
         if self.task not in TASKS:
@@ -127,6 +147,7 @@ class TrialSettings:
         d = asdict(self)
         d.pop("api_key")
         d.pop("base_url")
+        d.pop("oauth_token")
         return d
 
 
@@ -178,6 +199,18 @@ def add_trial_arguments(p: argparse.ArgumentParser) -> None:
     g.add_argument("--log-model-responses", type=_bool, default=True,
                    help="save every raw model response, incl. thinking, to trajectories/")
 
+    g = p.add_argument_group("agent CLI")
+    g.add_argument("--agent-cli", choices=["copilot", "claude-code"], default="copilot",
+                   help="the coding agent each agent runs: copilot (the paper's) or claude-code")
+    g.add_argument("--claude-binary", default=d["claude_binary"].default)
+    g.add_argument("--claude-auth", choices=["subscription", "api-key"], default="subscription",
+                   help="subscription: CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token`; "
+                        "api-key: ANTHROPIC_API_KEY through the local proxy (needs --provider anthropic)")
+    g.add_argument("--claude-extra-arg", action="append", dest="claude_extra_args", default=[])
+    g.add_argument("--limit-wait-seconds", type=float, default=d["limit_wait_seconds"].default,
+                   help="when a subscription usage limit is hit, wait this long before resuming")
+    g.add_argument("--extra-agent-env", action="append", default=[], metavar="KEY=VALUE",
+                   help="extra environment variable for every agent (repeatable; e.g. to point a CLI at a stub)")
     g = p.add_argument_group("copilot")
     g.add_argument("--copilot-binary", default=d["copilot_binary"].default)
     g.add_argument("--copilot-extra-arg", action="append", dest="copilot_extra_args", default=[],
@@ -215,6 +248,13 @@ def add_trial_arguments(p: argparse.ArgumentParser) -> None:
 
 def settings_from_args(args: argparse.Namespace, environ: dict[str, str] | None = None) -> TrialSettings:
     env = os.environ if environ is None else environ
+    if getattr(args, "agent_cli", "copilot") == "claude-code" and getattr(args, "claude_auth", "") == "subscription":
+        token = env.get("CLAUDE_CODE_OAUTH_TOKEN")
+        if not token:
+            raise SystemExit("CLAUDE_CODE_OAUTH_TOKEN is not set (create one with `claude setup-token`)")
+        names = {f for f in TrialSettings.__dataclass_fields__} - {"base_url", "api_key", "oauth_token"}
+        kwargs = {n: getattr(args, n) for n in names if hasattr(args, n)}
+        return TrialSettings(**kwargs, base_url="", api_key=None, oauth_token=token)
     if getattr(args, "provider", "openai") == "anthropic":
         base_url = env.get("ANTHROPIC_BASE_URL") or DEFAULT_ANTHROPIC_BASE_URL
         api_key = env.get("ANTHROPIC_API_KEY")
@@ -225,6 +265,6 @@ def settings_from_args(args: argparse.Namespace, environ: dict[str, str] | None 
         api_key = env.get("OPENAI_API_KEY")
         if not base_url:
             raise SystemExit("OPENAI_BASE_URL (or OPENAI_API_BASE) is not set")
-    names = {f for f in TrialSettings.__dataclass_fields__} - {"base_url", "api_key"}
+    names = {f for f in TrialSettings.__dataclass_fields__} - {"base_url", "api_key", "oauth_token"}
     kwargs = {n: getattr(args, n) for n in names if hasattr(args, n)}
     return TrialSettings(**kwargs, base_url=base_url, api_key=api_key)

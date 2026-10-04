@@ -77,6 +77,7 @@ class Trial:
         self.limit_wait_seconds = [0.0] * st.k
         self.ended_by = "all_agents_done"
         self.cli = make_cli(st)
+        self.live_procs: dict[int, asyncio.subprocess.Process] = {}  # agent -> running CLI process
         self.cli_version: str | None = None
         self.preflight: dict = {}
         self.services: Services | None = None
@@ -220,6 +221,7 @@ class Trial:
             before = len(ClaudeCodeCLI._results(stdout)) if isinstance(self.cli, ClaudeCodeCLI) else 0
             proc = await self.launcher.spawn(i, self.cli.argv(a, session_id, attempt, prompt), env,
                                              str(self.work / "task"), stdout)
+            self.live_procs[i] = proc
             killed = False
             while proc.returncode is None:
                 try:
@@ -230,6 +232,7 @@ class Trial:
                     killed = True
                     await self.launcher.kill(proc)
             self.exit_codes[i].append(proc.returncode)
+            self.live_procs.pop(i, None)
             attempt += 1
             outcome = None
             if not killed and isinstance(self.cli, ClaudeCodeCLI) and len(ClaudeCodeCLI._results(stdout)) > before:
@@ -339,6 +342,10 @@ class Trial:
             reason = "signal" if code == 5 else "trial_ended"
             for i in range(self.k):
                 self.task.retire(i, reason)
+        # a stopped trial (signal, error) must not leave agent processes running
+        for proc in list(self.live_procs.values()):
+            await self.launcher.kill(proc)
+        self.live_procs.clear()
         await self.launcher.kill_all_owned()
         if self.services:
             await self.services.stop()

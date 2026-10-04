@@ -14,6 +14,7 @@ import grp
 import os
 import pwd
 import signal
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -96,18 +97,49 @@ class AgentLauncher:
         return p.returncode, out.decode(errors="replace")
 
     @staticmethod
-    async def kill(proc: asyncio.subprocess.Process) -> None:
+    def _descendants(pid: int) -> list[int]:
+        """All descendant pids (a CLI may run tool commands in their own process groups)."""
+        try:
+            out = subprocess.run(["ps", "-A", "-o", "pid=,ppid="], capture_output=True, text=True, timeout=10).stdout
+        except (OSError, subprocess.SubprocessError):
+            return []
+        children: dict[int, list[int]] = {}
+        for line in out.splitlines():
+            parts = line.split()
+            if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                children.setdefault(int(parts[1]), []).append(int(parts[0]))
+        found, stack = [], [pid]
+        while stack:
+            for c in children.get(stack.pop(), []):
+                found.append(c)
+                stack.append(c)
+        return found
+
+    @classmethod
+    async def kill(cls, proc: asyncio.subprocess.Process) -> None:
         if proc.returncode is not None:
             return
-        try:
-            os.killpg(proc.pid, signal.SIGTERM)
+        tree = cls._descendants(proc.pid)  # collect before the parent dies and children get re-parented
+        for sig in (signal.SIGTERM, signal.SIGKILL):
+            for target in (proc.pid, *tree):
+                try:
+                    if target == proc.pid:
+                        os.killpg(proc.pid, sig)
+                    else:
+                        os.kill(target, sig)
+                except (ProcessLookupError, PermissionError):
+                    pass
             try:
                 await asyncio.wait_for(proc.wait(), 10)
+                if sig == signal.SIGTERM:
+                    for target in tree:  # make sure detached children went too
+                        try:
+                            os.kill(target, signal.SIGKILL)
+                        except (ProcessLookupError, PermissionError):
+                            pass
+                return
             except asyncio.TimeoutError:
-                os.killpg(proc.pid, signal.SIGKILL)
-                await proc.wait()
-        except ProcessLookupError:
-            pass
+                continue
 
     async def kill_all_owned(self) -> None:
         """Kill anything still running as an agent user (e.g. shells Copilot detached)."""

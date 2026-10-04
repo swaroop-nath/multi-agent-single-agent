@@ -45,7 +45,7 @@ class PolyominoTask(Task):
 
     @property
     def label(self) -> str:
-        return f"polyomino-{self.st.mode}{self.st.k}-{self.st.trial:03d}"
+        return f"polyomino-{self.st.mode_tag}{self.st.k}-{self.st.trial:03d}"
 
     @property
     def sessions(self):
@@ -186,7 +186,8 @@ class PolyominoTask(Task):
         return web.json_response(reply)
 
     def task_prompt(self) -> str:
-        return prompts.polyomino_task_prompt(self.statement, self.st.max_wall_seconds / 3600, self.st.k)
+        team = self.st.k if self.st.team_prompt == "paper" else 1  # loose: no team paragraph
+        return prompts.polyomino_task_prompt(self.statement, self.st.max_wall_seconds / 3600, team)
 
     def agent_env(self, i: int, host: str, port: int) -> dict[str, str]:
         return {"SUBMIT_URL": f"http://{host}:{port}/poly/{self.label}", "SUBMIT_TOKEN": self._sessions[i].token}

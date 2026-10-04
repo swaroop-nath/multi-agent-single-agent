@@ -30,6 +30,7 @@ class TrialSettings:
     k: int
     trial: int
     task: str = "arc"
+    team_prompt: str = "paper"  # paper: Appendix A.2 protocol | loose: "Work as a team." and nothing else
     game: str | None = None  # ARC only
     results_dir: str = "/tmp/results"
     max_wall_seconds: float = 12 * 3600
@@ -130,6 +131,8 @@ class TrialSettings:
             raise ValueError(f"task must be one of {TASKS}")
         if self.task == "arc" and not self.game:
             raise ValueError("ARC trials need --game")
+        if self.team_prompt not in ("paper", "loose"):
+            raise ValueError("team_prompt must be paper or loose")
         if self.mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
         if self.mode == "team" and self.k < 2:
@@ -142,6 +145,11 @@ class TrialSettings:
             raise ValueError("max_prompt_tokens + max_output_tokens must fit in context_window")
         if self.wall_margin_seconds is None:
             self.wall_margin_seconds = max(120.0, 0.03 * self.max_wall_seconds)
+
+    @property
+    def mode_tag(self) -> str:
+        """Mode as used in labels: loose-protocol teams are labelled separately from paper teams."""
+        return "teamloose" if self.mode == "team" and self.team_prompt == "loose" else self.mode
 
     def public_dict(self) -> dict:
         d = asdict(self)
@@ -166,6 +174,9 @@ def add_trial_arguments(p: argparse.ArgumentParser) -> None:
     g.add_argument("--game", default=None, help="ARC-AGI-3 game id, e.g. lp85 (ARC only)")
     g.add_argument("--mode", required=True, choices=MODES)
     g.add_argument("--k", type=int, required=True, help="number of agents (1 for solo modes)")
+    g.add_argument("--team-prompt", choices=["paper", "loose"], default="paper",
+                   help="team mode only. paper: the Appendix A.2 communication protocol; loose: only "
+                        "'You are one of N agents working on this same task at the same time. Work as a team.'")
     g.add_argument("--trial", type=int, required=True, help="trial index (labelling only)")
     g.add_argument("--results-dir", default=d["results_dir"].default)
     g.add_argument("--max-wall-seconds", type=float, default=d["max_wall_seconds"].default)

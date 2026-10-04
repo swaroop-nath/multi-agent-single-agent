@@ -74,7 +74,8 @@ def load_results(paths: list[Path]) -> tuple[list[dict], list[dict], list[dict]]
                 bad.append({"path": str(p), "label": t.get("label"), "error": r.get("error")})
                 continue
             task = t.get("task", "arc")
-            base = {"path": str(p), "label": t["label"], "task": task, "mode": t["mode"], "k": t["k"],
+            mode = "team_loose" if t["mode"] == "team" and t.get("team_prompt") == "loose" else t["mode"]
+            base = {"path": str(p), "label": t["label"], "task": task, "mode": mode, "k": t["k"],
                     "tokens_total": r["totals"]["output_tokens"]}
             if task == "arc":
                 arc.append({**base, "game": t["game"], "win_levels": r["game"]["win_levels"],
@@ -103,9 +104,10 @@ class Analysis:
             self.by[(r["mode"], r["k"], r["game"])].append(r)
         self.win_levels = {r["game"]: r["win_levels"] for r in results}
         self.configs = sorted({(r["mode"], r["k"]) for r in results}, key=lambda c: (c[0] != "solo", c))
+        self.team_mode = "team"  # or "team_loose"; set by the caller before comparing
 
     def games_both(self, team_k: int, solo_mode: str) -> list[str]:
-        return [g for g in self.games if self.by.get(("team", team_k, g)) and self.by.get((solo_mode, 1, g))]
+        return [g for g in self.games if self.by.get((self.team_mode, team_k, g)) and self.by.get((solo_mode, 1, g))]
 
     # ---- level-threshold rates ---------------------------------------------------------------------
     def solo_rate(self, mode: str, game: str, k: int, d: int) -> float:
@@ -114,7 +116,7 @@ class Analysis:
         return best_at_k(len(pool), sum(r["max_level"] >= target for r in pool), k)
 
     def team_rate(self, k: int, game: str, d: int) -> float:
-        trials = self.by.get(("team", k, game), [])
+        trials = self.by.get((self.team_mode, k, game), [])
         if not trials:
             return float("nan")
         target = self.win_levels[game] - d
@@ -139,7 +141,7 @@ class Analysis:
         rows = []
         for d in range(max_d, -1, -1):
             row = {"levels_from_target": d,
-                   f"team@{team_k}": _nanmean([self.team_rate(team_k, g, d) for g in games]),
+                   f"{self.team_mode}@{team_k}": _nanmean([self.team_rate(team_k, g, d) for g in games]),
                    f"best@{team_k}": _nanmean([self.solo_rate(solo_mode, g, team_k, d) for g in games])}
             if n_match:
                 row[f"best@{n_match}"] = _nanmean([self.solo_rate(solo_mode, g, n_match, d) for g in games])
@@ -151,15 +153,15 @@ class Analysis:
         rows = []
         for g in self.games:
             pool = self.by.get((solo_mode, 1, g), [])
-            team = self.by.get(("team", team_k, g), [])
+            team = self.by.get((self.team_mode, team_k, g), [])
             rows.append({
                 "game": g, "levels": self.win_levels[g],
                 "solo_trials": len(pool), "solo_solves": sum(r["solved"] for r in pool),
                 f"best@{team_k}_solve": self.solo_rate(solo_mode, g, team_k, 0) if pool else float("nan"),
-                f"team@{team_k}_trials": len(team),
-                f"team@{team_k}_solve": mean(r["solved"] for r in team) if team else float("nan"),
+                f"{self.team_mode}@{team_k}_trials": len(team),
+                f"{self.team_mode}@{team_k}_solve": mean(r["solved"] for r in team) if team else float("nan"),
                 f"best@{team_k}_furthest": expected_max_at_k([r["max_level"] for r in pool], team_k),
-                f"team@{team_k}_furthest": mean(r["max_level"] for r in team) if team else float("nan"),
+                f"{self.team_mode}@{team_k}_furthest": mean(r["max_level"] for r in team) if team else float("nan"),
             })
         return rows
 
@@ -170,12 +172,12 @@ class Analysis:
             pool = [r["rhae_agents"][0] for r in self.by[(solo_mode, 1, g)]]
             solo_mean.append(mean(pool))
             solo_best.append(expected_max_at_k(pool, team_k))
-            trials = self.by[("team", team_k, g)]
+            trials = self.by[(self.team_mode, team_k, g)]
             team_best.append(mean(max(r["rhae_agents"]) for r in trials))
             team_mean.append(mean(mean(r["rhae_agents"]) for r in trials))
         return {"games": len(games), "single_agent_mean": _nanmean(solo_mean),
-                f"best@{team_k}": _nanmean(solo_best), f"team@{team_k}_best_agent": _nanmean(team_best),
-                f"team@{team_k}_mean_agent": _nanmean(team_mean)}
+                f"best@{team_k}": _nanmean(solo_best), f"{self.team_mode}@{team_k}_best_agent": _nanmean(team_best),
+                f"{self.team_mode}@{team_k}_mean_agent": _nanmean(team_mean)}
 
     def token_curves(self, team_k: int, solo_mode: str = "solo", points: int = 40) -> list[dict]:
         """Solve rate vs total output-token budget; best@k splits the budget evenly over k agents."""
@@ -191,12 +193,12 @@ class Analysis:
         rows = []
         for i in range(points):
             budget = lo * (hi / lo) ** (i / (points - 1))
-            team = [mean(solved_within(r, budget) for r in self.by[("team", team_k, g)]) for g in games]
+            team = [mean(solved_within(r, budget) for r in self.by[(self.team_mode, team_k, g)]) for g in games]
             best = []
             for g in games:
                 pool = self.by[(solo_mode, 1, g)]
                 best.append(best_at_k(len(pool), sum(solved_within(r, budget / team_k) for r in pool), team_k))
-            rows.append({"total_output_tokens": round(budget), f"team@{team_k}": mean(team),
+            rows.append({"total_output_tokens": round(budget), f"{self.team_mode}@{team_k}": mean(team),
                          f"best@{team_k}": _nanmean(best)})
         return rows
 
@@ -252,13 +254,13 @@ def analyze_polyomino(results: list[dict], out_dir: Path) -> dict:
         _print_table(f"{tag}: final score (best valid submission per trial)", rows)
         comps = []
         for (mode, k), group in sorted(by.items()):
-            if mode != "team":
+            if not mode.startswith("team"):
                 continue
             for sm in SOLO_MODES:
                 pool = [r["score"] for r in by.get((sm, 1), [])]
                 if not pool:
                     continue
-                comps.append({"comparison": f"team@{k} vs {sm}", "team@k mean": mean(r["score"] for r in group),
+                comps.append({"comparison": f"{mode}@{k} vs {sm}", "team@k mean": mean(r["score"] for r in group),
                               f"best@k expected ({sm})": expected_max_at_k(pool, k),
                               "team best run": max(r["score"] for r in group), "solo best run": max(pool),
                               "solo pool size": len(pool)})
@@ -271,8 +273,8 @@ def analyze_polyomino(results: list[dict], out_dir: Path) -> dict:
                 vals = [_score_at(r, t) for r in group]
                 row[f"{mode}@{k} mean"] = mean(vals)
                 row[f"{mode}@{k} max"] = max(vals)
-                if mode != "team":
-                    for kk in sorted({kk for m, kk in by if m == "team"}):
+                if not mode.startswith("team"):
+                    for kk in sorted({kk for m, kk in by if m.startswith("team")}):
                         row[f"best@{kk} from {mode}"] = expected_max_at_k(vals, kk)
             curve.append(row)
         _write_csv(out_dir / f"{tag}_final.csv", rows)
@@ -308,27 +310,27 @@ def analyze_arc(results: list[dict], out_dir: Path) -> dict:
         rs = [r for r in results if r["mode"] == mode and r["k"] == k]
         print(f"  {mode}@{k}: {len(rs)} trials, mean output tokens/trial "
               f"{mean(r['tokens_total'] for r in rs):,.0f}, solve rate {mean(r['solved'] for r in rs):.3f}")
-    team_ks = sorted({k for m, k in a.configs if m == "team"})
     solo_modes = [m for m in SOLO_MODES if (m, 1) in a.configs]
-    for k in team_ks:
+    for team_mode, k in [(m, k) for m, k in a.configs if m.startswith("team")]:
+        a.team_mode = team_mode
         for sm in solo_modes:
-            tag = f"arc_team{k}_vs_{sm}"
+            tag = f"arc_{team_mode}{k}_vs_{sm}"
             depth, n_match = a.depth_table(k, sm), a.matching_pool_size(k, sm)
             per_game, rh, curves = a.per_game(k, sm), a.rhae_summary(k, sm), a.token_curves(k, sm)
-            _print_table(f"team@{k} vs {sm} pool: rate of reaching within d levels of a full solve (Table 2)", depth)
-            print(f"   matching pool size for team@{k}'s final solve rate: "
+            _print_table(f"{team_mode}@{k} vs {sm} pool: rate of reaching within d levels of a full solve (Table 2)", depth)
+            print(f"   matching pool size for {team_mode}@{k}'s final solve rate: "
                   f"{n_match if n_match else 'not reached by the pool'}")
-            _print_table(f"team@{k} vs {sm}: per game", per_game)
-            _print_table(f"team@{k} vs {sm}: RHAE", [rh])
+            _print_table(f"{team_mode}@{k} vs {sm}: per game", per_game)
+            _print_table(f"{team_mode}@{k} vs {sm}: RHAE", [rh])
             _write_csv(out_dir / f"{tag}_depth.csv", depth)
             _write_csv(out_dir / f"{tag}_per_game.csv", per_game)
             _write_csv(out_dir / f"{tag}_token_curve.csv", curves)
-            _plot_curve(out_dir / f"{tag}_token_curve.png", curves, k)
+            _plot_curve(out_dir / f"{tag}_token_curve.png", curves, k, team_mode)
             summary[tag] = {"depth": depth, "matching_pool_size": n_match, "rhae": rh, "per_game": per_game}
     return summary
 
 
-def _plot_curve(path: Path, rows: list[dict], k: int) -> None:
+def _plot_curve(path: Path, rows: list[dict], k: int, team_mode: str = "team") -> None:
     if not rows:
         return
     try:
@@ -340,7 +342,7 @@ def _plot_curve(path: Path, rows: list[dict], k: int) -> None:
     x = [r["total_output_tokens"] for r in rows]
     fig, ax = plt.subplots(figsize=(5, 3.5))
     ax.plot(x, [r[f"best@{k}"] for r in rows], label=f"best@{k}")
-    ax.plot(x, [r[f"team@{k}"] for r in rows], label=f"team@{k}")
+    ax.plot(x, [r[f"{team_mode}@{k}"] for r in rows], label=f"{team_mode}@{k}")
     ax.set_xscale("log")
     ax.set_xlabel("total output tokens")
     ax.set_ylabel("games solved")

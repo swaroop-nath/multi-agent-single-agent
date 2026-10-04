@@ -44,3 +44,14 @@ def test_depth_table_and_matching_pool():
     assert math.isclose(rows[0]["best@2"], best_at_k(8, 1, 2))
     n = a.matching_pool_size(2)
     assert best_at_k(8, 1, n) >= 0.5 > best_at_k(8, 1, n - 1)
+
+
+def test_loose_teams_are_a_separate_config():
+    results = [_r("solo", 1, "g", lvl) for lvl in (0, 1, 3, 1)]
+    results += [_r("team", 2, "g", 3), {**_r("team_loose", 2, "g", 0)}]
+    a = Analysis(results)
+    assert ("team", 2) in a.configs and ("team_loose", 2) in a.configs
+    a.team_mode = "team_loose"
+    assert a.team_rate(2, "g", 0) == 0.0
+    a.team_mode = "team"
+    assert a.team_rate(2, "g", 0) == 1.0

@@ -38,6 +38,23 @@ Copilot subscription, and no network access apart from model calls. Two provider
 | Wall-clock limit | Stops itself at `--max-wall-seconds` minus a margin (`--wall-margin-seconds`, default max(120 s, 3%)), writes results, exits 0 with `ended_by: wall_clock` |
 | Independent, rerunnable trials | No state outside the container; `--trial` is a label only |
 
+### Team prompt: the paper's protocol or a loose one (`--team-prompt`)
+
+* `paper` (default): the Appendix A.2 communication protocol, word for word, with a pre-made
+  shared folder (slots, findings, disconfirmations, score log, coordination).
+* `loose`: the task prompt plus one sentence, and nothing else:
+
+  > You are one of {n} agents working on this same task at the same time. Work as a team.
+
+  No channel is named, no folders are pre-made, and the task prompts' teammate paragraphs are
+  dropped: how (and whether) to find each other and coordinate is left to the agents. The only
+  shared medium is the common working folder. Loose teams are labelled `teamloose` and analysed
+  as their own configuration (`team_loose@k`), against the same solo pool.
+
+  Caveat for native (non-Docker) runs: all agents run as your user, so an exploring agent can read
+  its teammates' private CLI transcripts in the run folder. In Docker each agent is a separate
+  user and private folders are closed.
+
 ### Example: Claude Sonnet 4.6 on polyomino, one team@3 vs best@3, 3 hours
 
 ```bash

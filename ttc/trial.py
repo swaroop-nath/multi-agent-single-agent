@@ -136,7 +136,10 @@ class Trial:
     def _prepare_dirs(self) -> None:
         if self.work.exists():
             shutil.rmtree(self.work)
-        for sub in ("task/bin", "task/shared", "task/scratch"):
+        # loose teams get no pre-made shared/scratch folders: finding a channel is up to them
+        subs = ("task/bin",) if self.st.team_prompt == "loose" and self.st.mode == "team" else \
+            ("task/bin", "task/shared", "task/scratch")
+        for sub in subs:
             (self.work / sub).mkdir(parents=True)
         for i in range(self.k):
             a = self.work / "agents" / str(i)
@@ -162,7 +165,9 @@ class Trial:
             coordination=f"{shared}/coordination.md", base=f"{task_root}/scratch")
         task = self.task.task_prompt()
         (self.work / "task" / "AGENT.md").write_text(task)
-        if self.st.mode == "team":
+        if self.st.mode == "team" and self.st.team_prompt == "loose":
+            extra = prompts.loose_team_prompt(self.k)
+        elif self.st.mode == "team":
             extra = prompts.communication_prompt(self.k, paths)
         elif self.st.mode == "solo_rules":
             extra = prompts.solo_rules_prompt(paths)
@@ -376,6 +381,7 @@ class Trial:
         out: dict = {
             "schema_version": SCHEMA_VERSION,
             "trial": {"label": self.label, "task": st.task, "mode": st.mode, "k": st.k, "trial": st.trial,
+                      "team_prompt": st.team_prompt if st.mode == "team" else None,
                       "agent_cli": self.cli.name, "model": st.model_alias,
                       **(self.task.identity() if self.task_ready else {"game": st.game})},
             "status": "ok" if code == 0 else "infra_error",

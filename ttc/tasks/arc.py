@@ -29,7 +29,7 @@ class ArcTask(Task):
 
     @property
     def label(self) -> str:
-        return f"{self.st.game}-{self.st.mode}{self.st.k}-{self.st.trial:03d}"
+        return f"{self.st.game}-{self.st.mode_tag}{self.st.k}-{self.st.trial:03d}"
 
     def preflight(self) -> None:
         st = self.st
@@ -110,7 +110,8 @@ class ArcTask(Task):
         return web.json_response(out)
 
     def task_prompt(self) -> str:
-        return prompts.arc_task_prompt(self.st.game, self.game.win_levels, self.st.budget_multiplier, self.st.k)
+        team = self.st.k if self.st.team_prompt == "paper" else 1  # loose: no team paragraph
+        return prompts.arc_task_prompt(self.st.game, self.game.win_levels, self.st.budget_multiplier, team)
 
     def agent_env(self, i: int, host: str, port: int) -> dict[str, str]:
         return {"ARC_SERVER_URL": f"http://{host}:{port}/arc/{self.label}",

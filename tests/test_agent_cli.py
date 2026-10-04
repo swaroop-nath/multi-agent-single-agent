@@ -64,3 +64,9 @@ def test_usage_dedupes_messages_and_sums_cost(tmp_path):
     assert out["requests"] == 2 and out["output_tokens"] == 100 and out["cached_tokens"] == 2000
     assert out["prompt_tokens"] == 2 * (2 + 1000 + 100) and out["cache_write_tokens"] == 200
     assert out["failed"] == 1 and out["reported_cost_usd"] == 0.75 and len(out["timeline"]) == 2
+
+
+def test_loose_team_prompt_is_minimal():
+    from ttc import prompts
+    assert prompts.loose_team_prompt(3) == \
+        "You are one of 3 agents working on this same task at the same time. Work as a team."

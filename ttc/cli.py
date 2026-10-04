@@ -39,7 +39,8 @@ def _sweep(args: argparse.Namespace, passthrough: list[str]) -> int:
     async def one(idx: int, t: dict) -> None:
         nonlocal failures
         task = t.get("task", "arc")
-        label = f"{t.get('game', task)}-{t['mode']}{t['k']}-{t['trial']:03d}"
+        tag = "teamloose" if t["mode"] == "team" and t.get("team_prompt") == "loose" else t["mode"]
+        label = f"{t.get('game', task)}-{tag}{t['k']}-{t['trial']:03d}"
         out = root / label
         if (out / "result.json").exists() and json.loads((out / "result.json").read_text()).get("status") == "ok":
             return
@@ -49,6 +50,8 @@ def _sweep(args: argparse.Namespace, passthrough: list[str]) -> int:
                    "--port", str(args.base_port + idx % 1000)]
             if t.get("game"):
                 cmd += ["--game", t["game"]]
+            if t.get("team_prompt"):
+                cmd += ["--team-prompt", t["team_prompt"]]
             if t.get("max_wall_seconds") and "--max-wall-seconds" not in passthrough:
                 cmd += ["--max-wall-seconds", str(t["max_wall_seconds"])]
             cmd += passthrough

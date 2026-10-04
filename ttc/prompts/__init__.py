@@ -72,6 +72,15 @@ def polyomino_task_prompt(statement: str, hours: float, team_size: int) -> str:
                 {"statement": statement.strip(), "hours": f"{hours:g}", "team_section": team})
 
 
+LOOSE_TEAM_PROMPT = "You are one of {n} agents working on this same task at the same time. Work as a team."
+
+
+def loose_team_prompt(n: int) -> str:
+    """The minimal team instruction: teammates exist, nothing else. Channels and protocols are
+    left for the agents to discover and invent."""
+    return fill(LOOSE_TEAM_PROMPT, {"n": n})
+
+
 def communication_prompt(n: int, paths: SharedPaths) -> str:
     return fill(_template("communication.md"), {"n": n, "nm1": n - 1, **paths.as_dict()})
 

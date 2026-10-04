@@ -70,6 +70,7 @@ class Trial:
         self.work = Path(st.work_dir) / self.label
         self.task.work = self.work
         self.results = Path(st.results_dir)
+        self.shared_file = self.work / "task" / "shared" / "team.md"  # shared-file team prompt only
         self.keys = [f"{self.label}.{i}" for i in range(st.k)]
         self.exit_codes: list[list[int | None]] = [[] for _ in range(st.k)]
         self.crashes = [0] * st.k
@@ -137,11 +138,15 @@ class Trial:
     def _prepare_dirs(self) -> None:
         if self.work.exists():
             shutil.rmtree(self.work)
-        # loose teams get no pre-made shared/scratch folders: finding a channel is up to them
-        subs = ("task/bin",) if self.st.team_prompt == "loose" and self.st.mode == "team" else \
-            ("task/bin", "task/shared", "task/scratch")
+        # paper teams (and solo arms) get the A.2 folders; loose teams get nothing pre-made;
+        # shared-file teams get one empty shared file and nothing else
+        protocol = self.st.team_prompt if self.st.mode == "team" else "paper"
+        subs = {"paper": ("task/bin", "task/shared", "task/scratch"), "loose": ("task/bin",),
+                "shared-file": ("task/bin", "task/shared")}[protocol]
         for sub in subs:
             (self.work / sub).mkdir(parents=True)
+        if protocol == "shared-file":
+            self.shared_file.touch()
         for i in range(self.k):
             a = self.work / "agents" / str(i)
             for sub in sorted({"home", "logs", "tmp", *self.cli.private_dirs()}):
@@ -168,6 +173,8 @@ class Trial:
         (self.work / "task" / "AGENT.md").write_text(task)
         if self.st.mode == "team" and self.st.team_prompt == "loose":
             extra = prompts.loose_team_prompt(self.k)
+        elif self.st.mode == "team" and self.st.team_prompt == "shared-file":
+            extra = prompts.shared_file_team_prompt(self.k, str(self.shared_file))
         elif self.st.mode == "team":
             extra = prompts.communication_prompt(self.k, paths)
         elif self.st.mode == "solo_rules":

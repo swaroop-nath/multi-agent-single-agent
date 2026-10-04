@@ -38,7 +38,7 @@ Copilot subscription, and no network access apart from model calls. Two provider
 | Wall-clock limit | Stops itself at `--max-wall-seconds` minus a margin (`--wall-margin-seconds`, default max(120 s, 3%)), writes results, exits 0 with `ended_by: wall_clock` |
 | Independent, rerunnable trials | No state outside the container; `--trial` is a label only |
 
-### Team prompt: the paper's protocol or a loose one (`--team-prompt`)
+### Team prompt (`--team-prompt`): the paper's protocol, loose, or one shared file
 
 * `paper` (default): the Appendix A.2 communication protocol, word for word, with a pre-made
   shared folder (slots, findings, disconfirmations, score log, coordination).
@@ -50,6 +50,14 @@ Copilot subscription, and no network access apart from model calls. Two provider
   dropped: how (and whether) to find each other and coordinate is left to the agents. The only
   shared medium is the common working folder. Loose teams are labelled `teamloose` and analysed
   as their own configuration (`team_loose@k`), against the same solo pool.
+
+* `shared-file`: like `loose`, plus one empty shared file the team decides how to use:
+
+  > You are one of {n} agents working on this same task at the same time. Work as a team. There
+  > is one shared file, `<task>/shared/team.md`, that every agent can read and write; you can use
+  > it to communicate. As a team, figure out how best to use it.
+
+  Only that file is pre-made. These teams are labelled `teamfile` and analysed as `team_file@k`.
 
   Caveat for native (non-Docker) runs: all agents run as your user, so an exploring agent can read
   its teammates' private CLI transcripts in the run folder. In Docker each agent is a separate

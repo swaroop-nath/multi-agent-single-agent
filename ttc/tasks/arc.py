@@ -110,7 +110,7 @@ class ArcTask(Task):
         return web.json_response(out)
 
     def task_prompt(self) -> str:
-        team = self.st.k if self.st.team_prompt == "paper" else 1  # loose: no team paragraph
+        team = self.st.k if self.st.team_prompt == "paper" else 1  # loose/shared-file: no team paragraph
         return prompts.arc_task_prompt(self.st.game, self.game.win_levels, self.st.budget_multiplier, team)
 
     def agent_env(self, i: int, host: str, port: int) -> dict[str, str]:

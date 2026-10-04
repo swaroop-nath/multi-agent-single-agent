@@ -39,7 +39,9 @@ def _sweep(args: argparse.Namespace, passthrough: list[str]) -> int:
     async def one(idx: int, t: dict) -> None:
         nonlocal failures
         task = t.get("task", "arc")
-        tag = "teamloose" if t["mode"] == "team" and t.get("team_prompt") == "loose" else t["mode"]
+        tag = t["mode"]
+        if tag == "team" and t.get("team_prompt") in ("loose", "shared-file"):
+            tag = {"loose": "teamloose", "shared-file": "teamfile"}[t["team_prompt"]]
         label = f"{t.get('game', task)}-{tag}{t['k']}-{t['trial']:03d}"
         out = root / label
         if (out / "result.json").exists() and json.loads((out / "result.json").read_text()).get("status") == "ok":

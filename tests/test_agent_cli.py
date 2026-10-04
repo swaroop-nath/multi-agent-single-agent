@@ -70,3 +70,11 @@ def test_loose_team_prompt_is_minimal():
     from ttc import prompts
     assert prompts.loose_team_prompt(3) == \
         "You are one of 3 agents working on this same task at the same time. Work as a team."
+
+
+def test_shared_file_team_prompt():
+    from ttc import prompts
+    assert prompts.shared_file_team_prompt(2, "/w/task/shared/team.md") == (
+        "You are one of 2 agents working on this same task at the same time. Work as a team. "
+        "There is one shared file, `/w/task/shared/team.md`, that every agent can read and write; "
+        "you can use it to communicate. As a team, figure out how best to use it.")

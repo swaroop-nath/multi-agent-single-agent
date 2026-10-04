@@ -16,6 +16,7 @@ import os
 from dataclasses import asdict, dataclass, field
 
 MODES = ("solo", "solo_rules", "team")
+TEAM_PROMPTS = ("paper", "loose", "shared-file")
 PROVIDERS = ("openai", "anthropic")
 DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com"
 TASKS = ("arc", "polyomino")
@@ -30,7 +31,8 @@ class TrialSettings:
     k: int
     trial: int
     task: str = "arc"
-    team_prompt: str = "paper"  # paper: Appendix A.2 protocol | loose: "Work as a team." and nothing else
+    team_prompt: str = "paper"  # paper: Appendix A.2 protocol | loose: "Work as a team." only |
+                                # shared-file: loose + one shared file the team decides how to use
     game: str | None = None  # ARC only
     results_dir: str = "/tmp/results"
     max_wall_seconds: float = 12 * 3600
@@ -131,8 +133,8 @@ class TrialSettings:
             raise ValueError(f"task must be one of {TASKS}")
         if self.task == "arc" and not self.game:
             raise ValueError("ARC trials need --game")
-        if self.team_prompt not in ("paper", "loose"):
-            raise ValueError("team_prompt must be paper or loose")
+        if self.team_prompt not in TEAM_PROMPTS:
+            raise ValueError(f"team_prompt must be one of {TEAM_PROMPTS}")
         if self.mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
         if self.mode == "team" and self.k < 2:
@@ -149,7 +151,9 @@ class TrialSettings:
     @property
     def mode_tag(self) -> str:
         """Mode as used in labels: loose-protocol teams are labelled separately from paper teams."""
-        return "teamloose" if self.mode == "team" and self.team_prompt == "loose" else self.mode
+        if self.mode != "team" or self.team_prompt == "paper":
+            return self.mode
+        return {"loose": "teamloose", "shared-file": "teamfile"}[self.team_prompt]
 
     def public_dict(self) -> dict:
         d = asdict(self)
@@ -174,9 +178,10 @@ def add_trial_arguments(p: argparse.ArgumentParser) -> None:
     g.add_argument("--game", default=None, help="ARC-AGI-3 game id, e.g. lp85 (ARC only)")
     g.add_argument("--mode", required=True, choices=MODES)
     g.add_argument("--k", type=int, required=True, help="number of agents (1 for solo modes)")
-    g.add_argument("--team-prompt", choices=["paper", "loose"], default="paper",
+    g.add_argument("--team-prompt", choices=list(TEAM_PROMPTS), default="paper",
                    help="team mode only. paper: the Appendix A.2 communication protocol; loose: only "
-                        "'You are one of N agents working on this same task at the same time. Work as a team.'")
+                        "'You are one of N agents working on this same task at the same time. Work as a team.'; "
+                        "shared-file: loose plus one shared file the team decides how to use")
     g.add_argument("--trial", type=int, required=True, help="trial index (labelling only)")
     g.add_argument("--results-dir", default=d["results_dir"].default)
     g.add_argument("--max-wall-seconds", type=float, default=d["max_wall_seconds"].default)

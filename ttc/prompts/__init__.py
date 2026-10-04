@@ -75,6 +75,18 @@ def polyomino_task_prompt(statement: str, hours: float, team_size: int) -> str:
 LOOSE_TEAM_PROMPT = "You are one of {n} agents working on this same task at the same time. Work as a team."
 
 
+SHARED_FILE_TEAM_PROMPT = (
+    "You are one of {n} agents working on this same task at the same time. Work as a team. "
+    "There is one shared file, `{shared_file}`, that every agent can read and write; you can use it "
+    "to communicate. As a team, figure out how best to use it."
+)
+
+
+def shared_file_team_prompt(n: int, shared_file: str) -> str:
+    """Loose, plus one shared file whose use the team decides."""
+    return fill(SHARED_FILE_TEAM_PROMPT, {"n": n, "shared_file": shared_file})
+
+
 def loose_team_prompt(n: int) -> str:
     """The minimal team instruction: teammates exist, nothing else. Channels and protocols are
     left for the agents to discover and invent."""

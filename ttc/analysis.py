@@ -74,7 +74,9 @@ def load_results(paths: list[Path]) -> tuple[list[dict], list[dict], list[dict]]
                 bad.append({"path": str(p), "label": t.get("label"), "error": r.get("error")})
                 continue
             task = t.get("task", "arc")
-            mode = "team_loose" if t["mode"] == "team" and t.get("team_prompt") == "loose" else t["mode"]
+            mode = t["mode"]
+            if mode == "team" and t.get("team_prompt") in ("loose", "shared-file"):
+                mode = {"loose": "team_loose", "shared-file": "team_file"}[t["team_prompt"]]
             base = {"path": str(p), "label": t["label"], "task": task, "mode": mode, "k": t["k"],
                     "tokens_total": r["totals"]["output_tokens"]}
             if task == "arc":

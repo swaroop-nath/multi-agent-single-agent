@@ -96,3 +96,122 @@ def test_cost_matches_a_real_sonnet_4_6_run():
     assert abs(estimate_cost(totals, prices) - 18.33) < 0.01
     none = SimpleNamespace(price_input=None, price_output=None, price_cache_read=None, price_cache_write=None)
     assert estimate_cost(totals, none) is None
+
+
+# ---- merging token-by-token streams (SGLang sends one chunk per token) ------------------------------
+
+from ttc.services import coalesce_openai_sse
+
+
+def _per_token_stream():
+    head = {"id": "r1", "object": "chat.completion.chunk", "created": 1, "model": "glm"}
+    events = [{**head, "choices": [{"index": 0, "delta": {"role": "assistant", "content": None}, "finish_reason": None}]}]
+    for tok in ["Let", " me", " think", "."] * 500:
+        events.append({**head, "choices": [{"index": 0, "delta": {"reasoning_content": tok}, "finish_reason": None}]})
+    for tok in ["I'll", " look"]:
+        events.append({**head, "choices": [{"index": 0, "delta": {"content": tok}, "finish_reason": None}]})
+    calls = [(0, "c1", "bash", ['{"cmd"', ': "ls"}']), (1, "c2", "bash", ['{"cmd": ', '"which g++"}'])]
+    for i, cid, name, parts in calls:
+        events.append({**head, "choices": [{"index": 0, "delta": {"tool_calls": [
+            {"index": i, "id": cid, "type": "function", "function": {"name": name, "arguments": ""}}]}, "finish_reason": None}]})
+        for p in parts:
+            events.append({**head, "choices": [{"index": 0, "delta": {"tool_calls": [
+                {"index": i, "function": {"arguments": p}}]}, "finish_reason": None}]})
+    events.append({**head, "choices": [{"index": 0, "delta": {}, "finish_reason": "tool_calls"}]})
+    events.append({**head, "choices": [], "usage": {"prompt_tokens": 900, "completion_tokens": 2010,
+                                                    "reasoning_tokens": 2000}})
+    return sse(*events)
+
+
+def _rebuild(body):
+    """What a client reassembles from a stream: text per field, tool calls, finish, usage."""
+    from ttc.services import _sse_payloads
+    text, calls, finish, usage = {}, {}, None, None
+    for obj in _sse_payloads(body):
+        usage = obj.get("usage") or usage
+        for ch in obj.get("choices") or []:
+            finish = ch.get("finish_reason") or finish
+            for k, v in (ch.get("delta") or {}).items():
+                if k == "tool_calls":
+                    for tc in v:
+                        c = calls.setdefault(tc["index"], {"id": None, "name": None, "args": ""})
+                        c["id"] = c["id"] or tc.get("id")
+                        c["name"] = c["name"] or (tc.get("function") or {}).get("name")
+                        c["args"] += (tc.get("function") or {}).get("arguments") or ""
+                elif isinstance(v, str) and k != "role":
+                    text[k] = text.get(k, "") + v
+    return text, calls, finish, usage
+
+
+def test_per_token_stream_is_merged_without_changing_it():
+    body = _per_token_stream()
+    merged = coalesce_openai_sse(body)
+    assert merged.count(b"data: ") <= 4 < body.count(b"data: ")
+    assert _rebuild(merged) == _rebuild(body)
+    text, calls, finish, usage = _rebuild(merged)
+    assert text["reasoning_content"].startswith("Let me think.") and text["content"] == "I'll look"
+    assert calls[1] == {"id": "c2", "name": "bash", "args": '{"cmd": "which g++"}'} and finish == "tool_calls"
+    first = json.loads(merged.split(b"\n\n")[0][6:])
+    assert first["id"] == "r1" and first["model"] == "glm" and first["choices"][0]["delta"]["role"] == "assistant"
+    assert merged.endswith(b"data: [DONE]\n\n")
+    c = inspect_response(merged, is_sse=True)
+    assert c.has_content and c.has_tool_calls and normalize_usage(c.usage)["reasoning_tokens"] == 2000
+
+
+def test_unusual_streams_are_passed_through():
+    assert coalesce_openai_sse(b"data: not json\n\ndata: [DONE]\n\n") is None
+    assert coalesce_openai_sse(sse({"error": {"message": "boom"}})) is None
+    assert coalesce_openai_sse(b": keepalive\n\n") is None
+    merged = coalesce_openai_sse(b": keepalive\n\n" + sse(chunk({"content": "a"}), chunk({"content": "b"}, "stop")))
+    assert _rebuild(merged)[0] == {"content": "ab"} and _rebuild(merged)[2] == "stop"
+
+
+def test_reasoning_only_length_stop_is_truncation_not_overflow():
+    """A model that spends its whole output budget thinking (finish_reason=length) must not be
+    mistaken for a context overflow, which would end the agent."""
+    body = sse(chunk({"reasoning": "hmm " * 10}), chunk({}, "length"))
+    c = inspect_response(coalesce_openai_sse(body), is_sse=True)
+    assert c.is_truncated and not c.is_overflow
+
+
+def test_proxy_forwards_merged_stream(tmp_path):
+    """Through the real proxy: a per-token upstream stream reaches the client as a few chunks,
+    on both the fast path and the slow path (keepalives sent first)."""
+    import asyncio
+
+    import aiohttp
+    from aiohttp import web
+
+    from ttc.services import Services
+    from ttc.settings import TrialSettings
+
+    body = _per_token_stream()
+
+    async def main():
+        async def completions(request):
+            await asyncio.sleep(float(request.query.get("delay", "0")))
+            return web.Response(body=body, content_type="text/event-stream")
+        up = web.Application()
+        up.router.add_post("/v1/chat/completions", completions)
+        runner = web.AppRunner(up)
+        await runner.setup()
+        await web.TCPSite(runner, "127.0.0.1", 8793).start()
+        st = TrialSettings(mode="solo", k=1, trial=0, game="ls20", port=8794, base_url="http://127.0.0.1:8793/v1",
+                           sse_keepalive_after_seconds=0.2, sse_keepalive_interval_seconds=0.1)
+        svc = Services(st, tmp_path / "calls.jsonl")
+        await svc.start()
+        svc.register(["a.0"])
+        out = []
+        async with aiohttp.ClientSession() as s:
+            for delay in ("0", "0.6"):
+                async with s.post(f"http://127.0.0.1:8794/llm/a.0/chat/completions?delay={delay}",
+                                  json={"model": "m", "stream": True, "messages": []}) as r:
+                    out.append(await r.read())
+        await svc.stop()
+        await runner.cleanup()
+        return out, svc.calls["a.0"]
+
+    (fast, slow), calls = asyncio.run(main())
+    assert fast.count(b"data: ") <= 4 and _rebuild(fast) == _rebuild(body)
+    assert slow.startswith(b": keepalive") and _rebuild(slow) == _rebuild(body)
+    assert calls.ok == 2 and calls.reasoning_tokens == 4000

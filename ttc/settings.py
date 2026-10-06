@@ -70,6 +70,7 @@ class TrialSettings:
     upstream_timeout_seconds: float = 3600.0
     skip_model_preflight: bool = False
     log_model_responses: bool = True  # save every raw model response (incl. thinking)
+    coalesce_stream: bool = True  # openai: merge a streamed response into a few chunks for the CLI
 
     # facilitator (team + paper prompt + claude-code only): a third agent that reminds teammates to
     # follow the A.2 sharing and checking steps (ttc/facilitator.py)
@@ -246,6 +247,9 @@ def add_trial_arguments(p: argparse.ArgumentParser) -> None:
     g.add_argument("--skip-model-preflight", action="store_true")
     g.add_argument("--log-model-responses", type=_bool, default=True,
                    help="save every raw model response, incl. thinking, to trajectories/")
+    g.add_argument("--coalesce-stream", type=_bool, default=True,
+                   help="openai: merge each streamed response into a few chunks before passing it to the "
+                        "agent CLI (a server that streams one chunk per token can overwhelm Copilot)")
 
     g = p.add_argument_group("agent CLI")
     g.add_argument("--agent-cli", choices=["copilot", "claude-code"], default="copilot",

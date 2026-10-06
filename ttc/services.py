@@ -18,6 +18,10 @@ It also makes Copilot robust to slow or unusual servers:
   invisible to Copilot)
 * when a call takes long, sends SSE comment keepalives to Copilot (a server may send the whole
   stream at once after minutes, with no bytes before)
+* openai: merges a streamed response into a few chunks before passing it on. Responses are
+  buffered anyway, and a server that streams one chunk per token (SGLang) would otherwise hand
+  Copilot tens of thousands of events at once, which its event loop cannot keep up with. The
+  merged stream carries exactly the same text, reasoning, tool calls, finish reason and usage.
 * openai: adds max_tokens when Copilot omits it (it always does), maps `developer` -> `system`
 * detects context overflow (an error saying the prompt is too long, or an empty HTTP 200 with
   finish_reason "length") and repeated call failures, and reports them per agent
@@ -87,7 +91,7 @@ def normalize_usage(u: dict | None) -> dict:
         "output_tokens": u.get("completion_tokens", u.get("output_tokens", 0)) or 0,
     }
     det = u.get("completion_tokens_details") or u.get("output_tokens_details") or {}
-    out["reasoning_tokens"] = det.get("reasoning_tokens", 0) or 0
+    out["reasoning_tokens"] = det.get("reasoning_tokens") or u.get("reasoning_tokens") or 0  # SGLang: top level
     pdet = u.get("prompt_tokens_details") or u.get("input_tokens_details") or {}
     out["cached_tokens"] = pdet.get("cached_tokens", 0) or 0
     out["cache_write_tokens"] = 0
@@ -149,7 +153,7 @@ def _inspect_openai(objs) -> Completion:
             if ch.get("finish_reason"):
                 c.finish_reason = ch["finish_reason"]
             part = ch.get("delta") or ch.get("message") or {}
-            if (part.get("content") or "").strip() or (part.get("reasoning_content") or "").strip():
+            if any(isinstance(part.get(f), str) and part[f].strip() for f in ("content", "reasoning_content", "reasoning")):
                 c.has_content = True
             if part.get("tool_calls"):
                 c.has_tool_calls = True
@@ -207,6 +211,73 @@ def inspect_response(body: bytes, is_sse: bool, provider: str = "openai") -> Com
         except json.JSONDecodeError:
             objs = []
     return _inspect_anthropic(objs) if provider == "anthropic" else _inspect_openai(objs)
+
+
+def coalesce_openai_sse(body: bytes) -> bytes | None:
+    """Merge a complete chat-completions SSE stream into one delta per choice (plus the usage
+    chunk), with the same content, reasoning, tool calls, finish reason and usage. Returns None
+    when the stream has anything unexpected (non-JSON data, an error object), so the caller can
+    pass the original through untouched."""
+    first: dict | None = None
+    choices: dict[int, dict] = {}  # index -> {"delta": {...}, "tool_calls": {i: call}, "finish_reason": ...}
+    usage = None
+    for line in body.split(b"\n"):
+        line = line.strip()
+        if not line or line.startswith(b":"):
+            continue
+        if not line.startswith(b"data:"):
+            continue  # event:/id:/retry: lines carry nothing Copilot needs here
+        data = line[5:].strip()
+        if data == b"[DONE]":
+            continue
+        try:
+            obj = json.loads(data)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(obj, dict) or "error" in obj:
+            return None
+        if first is None:
+            first = obj
+        if obj.get("usage"):
+            usage = obj["usage"]
+        for ch in obj.get("choices") or []:
+            c = choices.setdefault(ch.get("index", 0), {"delta": {}, "tool_calls": {}, "finish_reason": None})
+            if ch.get("finish_reason"):
+                c["finish_reason"] = ch["finish_reason"]
+            for k, v in (ch.get("delta") or {}).items():
+                if k == "tool_calls":
+                    for tc in v or []:
+                        slot = c["tool_calls"].setdefault(tc.get("index", 0), {"index": tc.get("index", 0)})
+                        for f in ("id", "type"):
+                            if tc.get(f) and not slot.get(f):
+                                slot[f] = tc[f]
+                        fn = tc.get("function") or {}
+                        sfn = slot.setdefault("function", {})
+                        if fn.get("name") and not sfn.get("name"):
+                            sfn["name"] = fn["name"]
+                        if fn.get("arguments"):
+                            sfn["arguments"] = sfn.get("arguments", "") + fn["arguments"]
+                elif isinstance(v, str) and k != "role":
+                    c["delta"][k] = c["delta"].get(k, "") + v
+                elif v is not None and k not in c["delta"]:
+                    c["delta"][k] = v
+    if first is None:
+        return None
+    head = {k: first[k] for k in ("id", "object", "created", "model", "system_fingerprint") if k in first}
+    out = []
+    for idx in sorted(choices):
+        c = choices[idx]
+        delta = {"role": "assistant", **{k: v for k, v in c["delta"].items() if k != "role"}}
+        if c["tool_calls"]:
+            calls = [c["tool_calls"][i] for i in sorted(c["tool_calls"])]
+            for call in calls:
+                call.setdefault("function", {}).setdefault("arguments", "")
+            delta["tool_calls"] = calls
+        out.append({**head, "choices": [{"index": idx, "delta": delta, "finish_reason": None}]})
+        out.append({**head, "choices": [{"index": idx, "delta": {}, "finish_reason": c["finish_reason"]}]})
+    if usage is not None:
+        out.append({**head, "choices": [], "usage": usage})
+    return ("".join(f"data: {json.dumps(e)}\n\n" for e in out) + "data: [DONE]\n\n").encode()
 
 
 def is_overflow_error(status: int, body: bytes) -> bool:
@@ -412,6 +483,9 @@ class Services:
             self._responses.flush()
 
         if resp is None:
+            if ok and is_sse:
+                return web.Response(status=up.status, body=self._for_client(up.body),
+                                    headers={"Content-Type": up.content_type})
             if not up.body and up.status >= 400:
                 return web.Response(status=502 if up.status == 599 else up.status,
                                     text=f"upstream error: {up.error or up.status}")
@@ -420,7 +494,7 @@ class Services:
         # headers already sent: deliver the body, or an in-stream error the client can see
         try:
             if ok and is_sse:
-                await resp.write(up.body)
+                await resp.write(self._for_client(up.body))
             elif ok and not self.anthropic:  # upstream ignored stream=true; wrap the JSON as one event
                 await resp.write(b"data: " + up.body.strip() + b"\n\ndata: [DONE]\n\n")
             else:
@@ -430,6 +504,13 @@ class Services:
         except (ConnectionResetError, RuntimeError):
             pass
         return resp
+
+    def _for_client(self, body: bytes) -> bytes:
+        """The SSE body to hand the agent CLI: merged into a few chunks (openai), else as received."""
+        if self.anthropic or not getattr(self.s, "coalesce_stream", True):
+            return body
+        merged = coalesce_openai_sse(body)
+        return body if merged is None else merged
 
     def _account(self, key: str, t0: float, tail: str, up: Upstream, retries: int, comp: Completion,
                  is_chat: bool, ok: bool) -> None:

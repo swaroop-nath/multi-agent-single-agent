@@ -29,6 +29,7 @@ from pathlib import Path
 from . import prompts
 from .agent_cli import ClaudeCodeCLI, make_cli
 from .agents import AgentLauncher
+from .facilitator import Facilitator
 from .results import write_json, write_trajectories
 from .services import Services, estimate_cost
 from .settings import TrialSettings
@@ -79,6 +80,11 @@ class Trial:
         self.ended_by = "all_agents_done"
         self.cli = make_cli(st)
         self.live_procs: dict[int, asyncio.subprocess.Process] = {}  # agent -> running CLI process
+        self.streaming = st.facilitator and isinstance(self.cli, ClaudeCodeCLI)  # messages can be sent mid-run
+        self.stdin_open: dict[int, bool] = {}
+        self.pending: list[list[str]] = [[] for _ in range(st.k)]  # messages for an agent between launches
+        self.protocol_prompt = ""
+        self.facilitator: Facilitator | None = None
         self.cli_version: str | None = None
         self.preflight: dict = {}
         self.services: Services | None = None
@@ -177,6 +183,7 @@ class Trial:
             extra = prompts.shared_file_team_prompt(self.k, str(self.shared_file))
         elif self.st.mode == "team":
             extra = prompts.communication_prompt(self.k, paths)
+            self.protocol_prompt = extra
         elif self.st.mode == "solo_rules":
             extra = prompts.solo_rules_prompt(paths)
         else:
@@ -215,6 +222,30 @@ class Trial:
             self.task.retire(self._index(key), "model_errors")
 
     # ---- execution -------------------------------------------------------------------------------------------
+    def send_message(self, i: int, text: str) -> str:
+        """Deliver a user message to agent i's running session (streaming mode); if it is between
+        launches, queue it for the next launch. Returns "sent" or "queued"."""
+        proc = self.live_procs.get(i)
+        if self.streaming and proc is not None and proc.stdin is not None and self.stdin_open.get(i):
+            try:
+                proc.stdin.write(ClaudeCodeCLI.user_message(text))
+                return "sent"
+            except (BrokenPipeError, ConnectionResetError, RuntimeError):
+                self.stdin_open[i] = False
+        self.pending[i].append(text)
+        return "queued"
+
+    @staticmethod
+    def _new_result(stdout: Path, offset: int) -> tuple[bool, int]:
+        """Whether a Claude Code `result` event was written after `offset` (whole lines only)."""
+        with open(stdout, "rb") as f:
+            f.seek(offset)
+            chunk = f.read()
+        cut = chunk.rfind(b"\n") + 1
+        found = any(line.startswith(b"{") and b'"type":"result"' in line.replace(b" ", b"")
+                    for line in chunk[:cut].splitlines())
+        return found, offset + cut
+
     async def _agent_loop(self, i: int, prompt: str) -> None:
         s = self.task.sessions[i]
         env = self._agent_env(i)
@@ -226,8 +257,18 @@ class Trial:
         consecutive_errors = 0
         while True:
             before = len(ClaudeCodeCLI._results(stdout)) if isinstance(self.cli, ClaudeCodeCLI) else 0
-            proc = await self.launcher.spawn(i, self.cli.argv(a, session_id, attempt, prompt), env,
-                                             str(self.work / "task"), stdout)
+            if self.streaming:
+                proc = await self.launcher.spawn(i, self.cli.argv(a, session_id, attempt, prompt, streaming=True),
+                                                 env, str(self.work / "task"), stdout, stdin_pipe=True)
+                first = prompt if attempt == 0 else self.st.continue_prompt
+                for text in [first, *self.pending[i]]:
+                    proc.stdin.write(ClaudeCodeCLI.user_message(text))
+                self.pending[i].clear()
+                self.stdin_open[i] = True
+                offset = stdout.stat().st_size
+            else:
+                proc = await self.launcher.spawn(i, self.cli.argv(a, session_id, attempt, prompt), env,
+                                                 str(self.work / "task"), stdout)
             self.live_procs[i] = proc
             killed = False
             while proc.returncode is None:
@@ -235,11 +276,17 @@ class Trial:
                     await asyncio.wait_for(proc.wait(), POLL_S)
                 except asyncio.TimeoutError:
                     pass
+                if self.streaming and self.stdin_open.get(i):
+                    ended, offset = self._new_result(stdout, offset)
+                    if ended:  # the turn is over: close stdin so the CLI exits and the usual relaunch follows
+                        self.stdin_open[i] = False
+                        proc.stdin.close()
                 if s.status != "active" or time.time() >= self.deadline or self.task.stop_requested():
                     killed = True
                     await self.launcher.kill(proc)
             self.exit_codes[i].append(proc.returncode)
             self.live_procs.pop(i, None)
+            self.stdin_open[i] = False
             attempt += 1
             outcome = None
             if not killed and isinstance(self.cli, ClaudeCodeCLI) and len(ClaudeCodeCLI._results(stdout)) > before:
@@ -324,7 +371,17 @@ class Trial:
             await self._check_agent_path()
             self.task.mark_start()
             log.info("%s: %d agent(s) starting; deadline in %.0fs", self.label, self.k, self.deadline - time.time())
-            await asyncio.gather(*(self._agent_loop(i, prompt) for i in range(self.k)))
+            fac_task = None
+            if st.facilitator:
+                self.facilitator = Facilitator(self, self.protocol_prompt)
+                self.facilitator.prepare()
+                fac_task = asyncio.create_task(self.facilitator.run())
+            try:
+                await asyncio.gather(*(self._agent_loop(i, prompt) for i in range(self.k)))
+            finally:
+                if fac_task:
+                    fac_task.cancel()
+                    await asyncio.gather(fac_task, return_exceptions=True)
             self._collect_claude_usage()
             if any(s.end_reason == "wall_clock" for s in self.task.sessions):
                 self.ended_by = "wall_clock"
@@ -360,7 +417,11 @@ class Trial:
         try:
             if self.task_ready and hasattr(self.task, "write_artifacts"):
                 self.task.write_artifacts(self.results)
-            write_trajectories(self.work, self.results, self.k, self.task.trajectory_files() if self.task_ready else {})
+            extra = dict(self.task.trajectory_files()) if self.task_ready else {}
+            if self.facilitator:
+                extra["facilitator_rounds.jsonl.gz"] = self.facilitator.dir / "rounds.jsonl"
+                extra["facilitator-private.tar.gz"] = self.facilitator.dir
+            write_trajectories(self.work, self.results, self.k, extra)
         except Exception as e:  # noqa: BLE001
             result["trajectory_error"] = f"{type(e).__name__}: {e}"
         self.task.close()
@@ -396,6 +457,7 @@ class Trial:
             "schema_version": SCHEMA_VERSION,
             "trial": {"label": self.label, "task": st.task, "mode": st.mode, "k": st.k, "trial": st.trial,
                       "team_prompt": st.team_prompt if st.mode == "team" else None,
+                      "facilitator": st.facilitator,
                       "agent_cli": self.cli.name, "model": st.model_alias,
                       **(self.task.identity() if self.task_ready else {"game": st.game})},
             "status": "ok" if code == 0 else "infra_error",
@@ -448,6 +510,8 @@ class Trial:
             "cli_crashes": sum(self.crashes),
             "usage_limit_waits": sum(self.limit_waits),
         }
+        if self.facilitator:
+            out["facilitator"] = self.facilitator.summary()
         out["sampling_params_sent"] = {str(i): calls[k].sampling_params for i, k in enumerate(self.keys) if k in calls}
         return out
 

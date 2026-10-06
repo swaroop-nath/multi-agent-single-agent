@@ -123,9 +123,14 @@ class ClaudeCodeCLI:
             env["CLAUDE_CODE_OAUTH_TOKEN"] = self.st.oauth_token
         return env
 
-    def argv(self, agent_dir: Path, session_id: str, attempt: int, prompt: str) -> list[str]:
+    def argv(self, agent_dir: Path, session_id: str, attempt: int, prompt: str, streaming: bool = False) -> list[str]:
+        """streaming: the prompt is sent on stdin as a stream-json user message (see user_message),
+        and later messages written to stdin reach the agent mid-turn, at its next tool call."""
         st = self.st
-        argv = [st.claude_binary, "-p", prompt if attempt == 0 else st.continue_prompt]
+        if streaming:
+            argv = [st.claude_binary, "-p", "--input-format", "stream-json"]
+        else:
+            argv = [st.claude_binary, "-p", prompt if attempt == 0 else st.continue_prompt]
         argv += ["--session-id", session_id] if attempt == 0 else ["--resume", session_id]
         argv += ["--safe-mode", "--model", st.model_alias, "--output-format", "stream-json", "--verbose",
                  "--dangerously-skip-permissions", "--settings", self._settings(),
@@ -136,6 +141,12 @@ class ClaudeCodeCLI:
 
     def version_argv(self) -> list[str]:
         return [self.st.claude_binary, "--version"]
+
+    @staticmethod
+    def user_message(text: str) -> bytes:
+        """One stream-json user message for --input-format stream-json."""
+        return (json.dumps({"type": "user", "message": {"role": "user", "content": [{"type": "text", "text": text}]}})
+                + "\n").encode()
 
     def probe_argv(self) -> list[str]:
         """A tiny real request, used as the startup check for subscription auth."""

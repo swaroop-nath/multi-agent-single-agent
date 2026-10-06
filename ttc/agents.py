@@ -46,8 +46,9 @@ class AgentLauncher:
     def should_drop(mode: str) -> bool:
         return mode == "auto" and os.geteuid() == 0
 
-    def argv(self, i: int, argv: list[str]) -> list[str]:
-        ident = self.ids[i]
+    def argv(self, i: int | None, argv: list[str]) -> list[str]:
+        """i=None: run as the harness user (the facilitator), not as an agent."""
+        ident = self.ids[i] if i is not None else None
         if ident is None:
             return UMASK_WRAPPER + argv
         return ["setpriv", f"--reuid={ident.uid}", f"--regid={ident.gid}", "--clear-groups", "--",
@@ -73,16 +74,17 @@ class AgentLauncher:
                 os.chmod(p, 0o775 if p.stat().st_mode & 0o111 else 0o664)
 
     async def spawn(self, i: int, argv: list[str], env: dict[str, str], cwd: str,
-                    stdout_path: Path) -> asyncio.subprocess.Process:
+                    stdout_path: Path, stdin_pipe: bool = False) -> asyncio.subprocess.Process:
         out = open(stdout_path, "ab")
         try:
             return await asyncio.create_subprocess_exec(
                 *self.argv(i, argv), env=env, cwd=cwd, stdout=out, stderr=asyncio.subprocess.STDOUT,
-                stdin=asyncio.subprocess.DEVNULL, start_new_session=True)
+                stdin=asyncio.subprocess.PIPE if stdin_pipe else asyncio.subprocess.DEVNULL,
+                start_new_session=True)
         finally:
             out.close()
 
-    async def run(self, i: int, argv: list[str], env: dict[str, str], cwd: str,
+    async def run(self, i: int | None, argv: list[str], env: dict[str, str], cwd: str,
                   timeout: float = 60) -> tuple[int, str]:
         p = await asyncio.create_subprocess_exec(*self.argv(i, argv), env=env, cwd=cwd,
                                                  stdout=asyncio.subprocess.PIPE,

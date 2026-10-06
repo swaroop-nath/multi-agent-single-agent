@@ -70,6 +70,10 @@ class ArcTask(Task):
     def mark_start(self) -> None:
         self.game.t0 = time.time()
 
+    def progress(self, i: int) -> str:
+        a = self.game.summary()["agents"][i]
+        return f"level {a['max_level']} of {self.game.win_levels}, {a['total_actions']} actions"
+
     def close(self) -> None:
         if self.game:
             self.game.close()

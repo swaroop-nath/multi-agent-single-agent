@@ -60,6 +60,16 @@ class PolyominoTask(Task):
     def mark_start(self) -> None:
         self.t0 = time.time()
 
+    def progress(self, i: int) -> str:
+        with self._ledger_lock:
+            mine = [e for e in self.ledger if e.get("agent") == i and "t_done" in e]
+        if not mine:
+            return "none yet"
+        best = self.agent_best.get(i)
+        last = (time.time() - self.t0 - mine[-1]["t_done"]) / 60
+        return (f"{len(mine)} judged, best valid {best['score']:.4f}" if best else f"{len(mine)} judged, none valid") \
+            + f", last one {last:.0f} min ago"
+
     # preflight / setup ------------------------------------------------------------------------------
     def preflight(self) -> None:
         root = Path(self.st.frontiercs_dir)

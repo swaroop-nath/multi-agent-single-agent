@@ -70,6 +70,10 @@ class Task:
     def mark_start(self) -> None:
         """Called right before agents launch; times are measured from here."""
 
+    def progress(self, i: int) -> str:
+        """A one-line summary of agent i's own progress, for the facilitator (ttc/facilitator.py)."""
+        return ""
+
     def close(self) -> None:
         pass
 

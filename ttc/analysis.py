@@ -75,7 +75,9 @@ def load_results(paths: list[Path]) -> tuple[list[dict], list[dict], list[dict]]
                 continue
             task = t.get("task", "arc")
             mode = t["mode"]
-            if mode == "team" and t.get("team_prompt") in ("loose", "shared-file"):
+            if mode == "team" and t.get("facilitator"):
+                mode = "team_fac"
+            elif mode == "team" and t.get("team_prompt") in ("loose", "shared-file"):
                 mode = {"loose": "team_loose", "shared-file": "team_file"}[t["team_prompt"]]
             base = {"path": str(p), "label": t["label"], "task": task, "mode": mode, "k": t["k"],
                     "tokens_total": r["totals"]["output_tokens"]}

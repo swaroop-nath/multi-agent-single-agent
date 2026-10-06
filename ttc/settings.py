@@ -22,6 +22,11 @@ DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com"
 TASKS = ("arc", "polyomino")
 DEFAULT_ENVIRONMENTS_DIR = "/opt/arc_envs"
 DEFAULT_FRONTIERCS_DIR = "/opt/frontiercs"
+# sent when an agent's CLI exits early and is relaunched on the same session
+ARC_CONTINUE_PROMPT = ("Your game session is still active and time remains. Re-read the task instructions "
+                       "(AGENT.md) and continue working. Check `arc info` for your current status.")
+POLYOMINO_CONTINUE_PROMPT = ("Time remains. Re-read the task instructions (AGENT.md) and keep improving your "
+                             "solution. `submit --best` shows your best valid submission so far.")
 
 
 @dataclass
@@ -66,6 +71,16 @@ class TrialSettings:
     skip_model_preflight: bool = False
     log_model_responses: bool = True  # save every raw model response (incl. thinking)
 
+    # facilitator (team + paper prompt + claude-code only): a third agent that reminds teammates to
+    # follow the A.2 sharing and checking steps (ttc/facilitator.py)
+    facilitator: bool = False
+    facilitator_interval_seconds: float = 900.0
+    facilitator_first_seconds: float = 900.0  # first round this long after the start
+    facilitator_min_remaining_seconds: float = 300.0  # no new round this close to the deadline
+    facilitator_timeout_seconds: float = 600.0
+    facilitator_model: str | None = None  # default: the agents' model
+    facilitator_effort: str | None = None  # default: the agents' effort
+
     # agent CLI: copilot (the paper's harness) or claude-code
     agent_cli: str = "copilot"
     claude_binary: str = "claude"
@@ -79,10 +94,7 @@ class TrialSettings:
     copilot_binary: str = "copilot"
     copilot_extra_args: list[str] = field(default_factory=list)
     max_relaunches: int = 50
-    continue_prompt: str = (
-        "Your game session is still active and time remains. Re-read the task instructions "
-        "(AGENT.md) and continue working. Check `arc info` for your current status."
-    )
+    continue_prompt: str = ""  # default: ARC_CONTINUE_PROMPT or POLYOMINO_CONTINUE_PROMPT
     copilot_log_level: str = "info"
 
     # agents' OS identity: "auto" drops to per-agent users when running as root
@@ -135,6 +147,11 @@ class TrialSettings:
             raise ValueError("ARC trials need --game")
         if self.team_prompt not in TEAM_PROMPTS:
             raise ValueError(f"team_prompt must be one of {TEAM_PROMPTS}")
+        if self.facilitator:
+            if self.mode != "team" or self.team_prompt != "paper":
+                raise ValueError("--facilitator needs --mode team with the paper team prompt")
+            if self.agent_cli != "claude-code":
+                raise ValueError("--facilitator needs --agent-cli claude-code (reminders use its streaming input)")
         if self.mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
         if self.mode == "team" and self.k < 2:
@@ -145,12 +162,16 @@ class TrialSettings:
             self.max_prompt_tokens = self.context_window - self.max_output_tokens
         if self.max_prompt_tokens + self.max_output_tokens > self.context_window:
             raise ValueError("max_prompt_tokens + max_output_tokens must fit in context_window")
+        if not self.continue_prompt:
+            self.continue_prompt = POLYOMINO_CONTINUE_PROMPT if self.task == "polyomino" else ARC_CONTINUE_PROMPT
         if self.wall_margin_seconds is None:
             self.wall_margin_seconds = max(120.0, 0.03 * self.max_wall_seconds)
 
     @property
     def mode_tag(self) -> str:
-        """Mode as used in labels: loose-protocol teams are labelled separately from paper teams."""
+        """Mode as used in labels: loose-protocol and facilitated teams are labelled separately."""
+        if self.mode == "team" and self.facilitator:
+            return "teamfac"
         if self.mode != "team" or self.team_prompt == "paper":
             return self.mode
         return {"loose": "teamloose", "shared-file": "teamfile"}[self.team_prompt]
@@ -182,6 +203,17 @@ def add_trial_arguments(p: argparse.ArgumentParser) -> None:
                    help="team mode only. paper: the Appendix A.2 communication protocol; loose: only "
                         "'You are one of N agents working on this same task at the same time. Work as a team.'; "
                         "shared-file: loose plus one shared file the team decides how to use")
+    g.add_argument("--facilitator", action="store_true",
+                   help="team + paper prompt + claude-code: a third agent periodically reminds each teammate to "
+                        "share progress and check the shared files exactly as the A.2 protocol says")
+    g.add_argument("--facilitator-interval-seconds", type=float, default=d["facilitator_interval_seconds"].default)
+    g.add_argument("--facilitator-first-seconds", type=float, default=d["facilitator_first_seconds"].default)
+    g.add_argument("--facilitator-min-remaining-seconds", type=float,
+                   default=d["facilitator_min_remaining_seconds"].default)
+    g.add_argument("--facilitator-timeout-seconds", type=float, default=d["facilitator_timeout_seconds"].default)
+    g.add_argument("--facilitator-model", default=None, help="default: the agents' model")
+    g.add_argument("--facilitator-effort", default=None,
+                   choices=["low", "medium", "high", "xhigh", "max"], help="default: the agents' effort")
     g.add_argument("--trial", type=int, required=True, help="trial index (labelling only)")
     g.add_argument("--results-dir", default=d["results_dir"].default)
     g.add_argument("--max-wall-seconds", type=float, default=d["max_wall_seconds"].default)

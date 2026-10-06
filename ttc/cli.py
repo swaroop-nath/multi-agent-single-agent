@@ -40,7 +40,9 @@ def _sweep(args: argparse.Namespace, passthrough: list[str]) -> int:
         nonlocal failures
         task = t.get("task", "arc")
         tag = t["mode"]
-        if tag == "team" and t.get("team_prompt") in ("loose", "shared-file"):
+        if tag == "team" and t.get("facilitator"):
+            tag = "teamfac"
+        elif tag == "team" and t.get("team_prompt") in ("loose", "shared-file"):
             tag = {"loose": "teamloose", "shared-file": "teamfile"}[t["team_prompt"]]
         label = f"{t.get('game', task)}-{tag}{t['k']}-{t['trial']:03d}"
         out = root / label
@@ -54,6 +56,8 @@ def _sweep(args: argparse.Namespace, passthrough: list[str]) -> int:
                 cmd += ["--game", t["game"]]
             if t.get("team_prompt"):
                 cmd += ["--team-prompt", t["team_prompt"]]
+            if t.get("facilitator"):
+                cmd += ["--facilitator"]
             if t.get("max_wall_seconds") and "--max-wall-seconds" not in passthrough:
                 cmd += ["--max-wall-seconds", str(t["max_wall_seconds"])]
             cmd += passthrough

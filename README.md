@@ -63,6 +63,27 @@ Copilot subscription, and no network access apart from model calls. Two provider
   its teammates' private CLI transcripts in the run folder. In Docker each agent is a separate
   user and private folders are closed.
 
+### Facilitator (`--facilitator`): reminders to follow the paper's protocol
+
+With `--mode team --team-prompt paper --agent-cli claude-code`, a third Claude Code agent (same
+model and effort as the agents unless `--facilitator-model` / `--facilitator-effort` say otherwise)
+acts as a reminder service. It is not a teammate and not a new protocol. Every
+`--facilitator-interval-seconds` (default 900, first round after `--facilitator-first-seconds`) it
+reads the shared folder and each agent's private scratch (read-only tools: Read, Glob, Grep), plus
+each agent's own submission count and best score. It then returns one short reminder per agent, addressed by slot:
+share your progress the way the protocol says (score log, findings, disconfirmations), and check the
+shared files for news from your teammates. It may quote the protocol. It may not pass on content
+(teammates' ideas, code or scores), add files or conventions, or give task advice. Its instructions
+are in `ttc/facilitator.py` and saved per run as `facilitator/system_prompt.md`.
+
+Agents then run with Claude Code's streaming input (`--input-format stream-json`), and each reminder
+is written to the agent's stdin. Claude Code shows it at the agent's next tool call, inside the same
+turn, as "The user sent a new message while you were working: [Team reminder from the harness] ...".
+The agents' prompt is unchanged. Every round (prompt, inferred slots, reminders, delivery) is in
+`trajectories/facilitator_rounds.jsonl.gz`, the facilitator's own session in
+`trajectories/facilitator-private.tar.gz`, and its rounds and token cost in `result.json` under
+`facilitator`. These teams are labelled `teamfac` and analysed as `team_fac@k`.
+
 ### Example: Claude Sonnet 4.6 on polyomino, one team@3 vs best@3, 3 hours
 
 ```bash
